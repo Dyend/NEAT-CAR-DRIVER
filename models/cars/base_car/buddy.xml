@@ -77,9 +77,9 @@
     </fixed>
   </tendon>
   <sensor>
-    <accelerometer name="buddy_accelerometer" site="buddy_imu" />
-    <gyro name="buddy_gyro" site="buddy_imu" />
-    <velocimeter name="buddy_velocimeter" site="buddy_imu" />
-    <rangefinder name="buddy_rangefinder" site="buddy_imu" />
+    <accelerometer name="accelerometer" site="buddy_imu" />
+    <gyro name="gyro" site="buddy_imu" />
+    <velocimeter name="velocimeter" site="buddy_imu" />
+    <rangefinder name="rangefinder" site="buddy_imu" />
   </sensor>
 </mujoco>
