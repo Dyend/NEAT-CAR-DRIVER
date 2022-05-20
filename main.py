@@ -11,6 +11,7 @@ viewer = MjViewer(sim)
 def simular(steps, render=False):
     t = 0
     fitness = 0
+    visitado = []
     for step in range(steps):
         sim.step()
         if render:
@@ -28,7 +29,7 @@ def simular(steps, render=False):
 
         sim.data.qpos[15] = 0.5 + math.cos(t*0.01)
         t += 1
-        fitness += evaluar(sim.data.ctrl[1], sim.data.ncon)
+        fitness, visitado = evaluar(fitness, visitado, sim.data.ctrl[1], sim.data.ncon)
 
     return fitness
 
@@ -38,13 +39,19 @@ def entrenamiento():
     for e in range(episodes):
         resultado = simular(steps, render=True)
         print(f'fitness {resultado}')
-def evaluar(velocidad, datos_colision):
+def evaluar(fitness, visitado, velocidad, datos_colision):
+    if((format(sim.data.qpos[0],".1f"),format(sim.data.qpos[1],".1f")) in visitado):
+        # print("Este espacio ya fué visitado")
+        return fitness, visitado
+    visitado.append((format(sim.data.qpos[0],".1f"),format(sim.data.qpos[1],".1f")))
     if (detectar_colision(datos_colision)):
         #Retornar valores negativos si se desea descontar puntaje por cada frame que se está haciendo colisión.
-        return 0
+        return fitness, visitado
     #retornamos como maximo el valor 1 correspondiende a la velocidad.
     #se descuenta puntaje si este está retrosediendo (velocidad negativa) pues se considera que estaria pasando por un lugar que ya visitó.
-    return velocidad
+    fitness += velocidad
+    # print(fitness)
+    return fitness, visitado
 
 def detectar_colision(datos_colision):
     for i in range(datos_colision):
