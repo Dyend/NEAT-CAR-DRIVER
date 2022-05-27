@@ -27,6 +27,7 @@ def close_render(viewer):
     glfw.destroy_window(viewer.window)
 
 def simular_genoma(net, sim, steps, render):
+    choque = 0
     sim.reset()
     t = 0
     visitado = []
@@ -50,7 +51,9 @@ def simular_genoma(net, sim, steps, render):
 
         sim.data.qpos[15] = 0.5 + math.cos(t*0.01)
         t += 1
-        criterio, visitado = evaluar(visitado, sim)
+        criterio, visitado, choque = evaluar(visitado, sim, choque)
+        if (choque == 1):
+            break
         fitness += criterio
     if render:
         close_render(viewer)
@@ -69,21 +72,24 @@ def simular(net, episodes, steps, render=False):
     return fitness
 
 
-def evaluar(visitado, sim):
+def evaluar(visitado, sim, choque):
     criterio = 0
+    if (choque == 1):
+        return criterio, visitado, choque
     velocidad = sim.data.ctrl[1]
     datos_colision = sim.data.ncon
     if((format(sim.data.qpos[0],".1f"),format(sim.data.qpos[1],".1f")) in visitado):
         # print("Este espacio ya fué visitado")
-        return criterio, visitado
+        return criterio, visitado, choque
     visitado.append((format(sim.data.qpos[0],".1f"),format(sim.data.qpos[1],".1f")))
     if (detectar_colision(datos_colision, sim)):
         #Retornar valores negativos si se desea descontar puntaje por cada frame que se está haciendo colisión.
-        return criterio, visitado
+        choque = 1
+        return criterio, visitado, choque
     #retornamos como maximo el valor 1 correspondiende a la velocidad.
     #se descuenta puntaje si este está retrosediendo (velocidad negativa) pues se considera que estaria pasando por un lugar que ya visitó.
     criterio += velocidad
-    return criterio, visitado
+    return criterio, visitado, choque
 
 def detectar_colision(datos_colision, sim):
     for i in range(datos_colision):
