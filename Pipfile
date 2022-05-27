@@ -8,6 +8,7 @@ mujoco-py = "*"
 numpy = "*"
 pynput = "*"
 neat-python = "*"
+graphviz = "*"
 
 [dev-packages]
 

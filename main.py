@@ -4,7 +4,8 @@ import numpy as np
 import glfw
 import multiprocessing
 import neat
-from mujoco_py import load_model_from_xml, MjSim, MjViewerBasic, load_model_from_path
+import visualize
+from mujoco_py import load_model_from_xml, MjSim, MjViewer, MjViewerBasic, load_model_from_path
 from neat import nn, population, statistics, parallel
 
 #model = load_model_from_xml(MODEL_XML)
@@ -13,7 +14,7 @@ model = load_model_from_path(xml_path)
 
 cores = multiprocessing.cpu_count()
 episodios = 2
-steps = 6000
+steps = 12000
 render = False
 generations = 100
 training = True
@@ -33,7 +34,7 @@ def simular_genoma(net, sim, steps, render):
     visitado = []
     fitness = 0
     if render:
-        viewer = MjViewerBasic(sim)
+        viewer = MjViewer(sim)
     for step in range(steps):
         sim.step()
         if render:
@@ -61,8 +62,6 @@ def simular_genoma(net, sim, steps, render):
     return fitness
 
 def simular(net, episodes, steps, render=False):
-    episodes = 1
-    steps = 3000
     fitnesses = []
     sim = MjSim(model)
     for e in range(episodes):
@@ -125,7 +124,7 @@ config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
 
 pop = population.Population(config)
 if checkpoint:
-    pop = neat.Checkpointer.restore_checkpoint('neat-checkpoint-99')
+    pop = neat.Checkpointer.restore_checkpoint('neat-checkpoint-325')
     
 
 stats = neat.StatisticsReporter()
@@ -144,7 +143,8 @@ if training:
 
 #visualization.plot_stats(stats, ylog=True, view=True, filename="feedforward-fitness.svg")
 #visualization.plot_species(stats, view=True, filename="feedforward-speciation.svg")
-
+visualize.plot_stats(stats, ylog=False, view=True)
+visualize.plot_species(stats, view=True)
 input("Press Enter to run the best genome...")
 
 if checkpoint:
@@ -159,4 +159,4 @@ print('\nBest genome:\n{!s}'.format(winner))
 
 
 winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-simular(winner_net, 1, 10000, render=True)
+simular(winner_net, 1, 100000, render=True)
