@@ -17,8 +17,8 @@ episodios = 2
 steps = 12000
 render = False
 generations = 100
-training = True
-checkpoint = False
+training = False
+checkpoint = True
 
 def worker_evaluate_genome(g, config):
     net = nn.FeedForwardNetwork.create(g, config)
@@ -77,24 +77,26 @@ def evaluar(visitado, sim, choque):
         return criterio, visitado, choque
     velocidad = sim.data.ctrl[1]
     datos_colision = sim.data.ncon
-    if((format(sim.data.qpos[0],".1f"),format(sim.data.qpos[1],".1f")) in visitado):
-        # print("Este espacio ya fué visitado")
-        return criterio, visitado, choque
-    visitado.append((format(sim.data.qpos[0],".1f"),format(sim.data.qpos[1],".1f")))
     if (detectar_colision(datos_colision, sim)):
         #Retornar valores negativos si se desea descontar puntaje por cada frame que se está haciendo colisión.
         choque = 1
         return criterio, visitado, choque
+    if((format(sim.data.qpos[0],".0f"),format(sim.data.qpos[1],".0f")) in visitado):
+        # print("Este espacio ya fué visitado")
+        return criterio, visitado, choque
+    visitado.append((format(sim.data.qpos[0],".0f"),format(sim.data.qpos[1],".0f")))
     #retornamos como maximo el valor 1 correspondiende a la velocidad.
     #se descuenta puntaje si este está retrosediendo (velocidad negativa) pues se considera que estaria pasando por un lugar que ya visitó.
     criterio += velocidad
     return criterio, visitado, choque
 
+
+
 def detectar_colision(datos_colision, sim):
     for i in range(datos_colision):
         contact = sim.data.contact[i]
         if(sim.model.geom_id2name(contact.geom1) == None or sim.model.geom_id2name(contact.geom2) == None):
-            if(sim.model.geom_id2name(contact.geom1) != "floor" or sim.model.geom_id2name(contact.geom2) == "floor"):
+            if(sim.model.geom_id2name(contact.geom1) != "floor" and sim.model.geom_id2name(contact.geom2) != "floor"):
                 return True
     return False
 
@@ -124,7 +126,7 @@ config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
 
 pop = population.Population(config)
 if checkpoint:
-    pop = neat.Checkpointer.restore_checkpoint('neat-checkpoint-325')
+    pop = neat.Checkpointer.restore_checkpoint('neat-checkpoint-99')
     
 
 stats = neat.StatisticsReporter()
@@ -143,13 +145,14 @@ if training:
 
 #visualization.plot_stats(stats, ylog=True, view=True, filename="feedforward-fitness.svg")
 #visualization.plot_species(stats, view=True, filename="feedforward-speciation.svg")
-visualize.plot_stats(stats, ylog=False, view=True)
-visualize.plot_species(stats, view=True)
+
 input("Press Enter to run the best genome...")
 
 if checkpoint:
     winner = pop.run(eval_genomes, 1)
-
+else:
+    visualize.plot_stats(stats, ylog=False, view=True)
+    visualize.plot_species(stats, view=True)
 # Save best network
 import pickle
 with open('winner.pkl', 'wb') as output:
