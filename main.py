@@ -81,16 +81,15 @@ def evaluar(visitado, sim, choque):
         #Retornar valores negativos si se desea descontar puntaje por cada frame que se está haciendo colisión.
         choque = 1
         return criterio, visitado, choque
-    if((format(sim.data.qpos[0],".0f"),format(sim.data.qpos[1],".0f")) in visitado):
+    posicion_vehiculo = (format(sim.data.qpos[0],".0f"),format(sim.data.qpos[1],".0f")) #verigicar bien si corresponde al centro del vehiculo y no a una rueda
+    if (posicion_vehiculo in visitado):
         # print("Este espacio ya fué visitado")
         return criterio, visitado, choque
-    visitado.append((format(sim.data.qpos[0],".0f"),format(sim.data.qpos[1],".0f")))
+    visitado.append(posicion_vehiculo)
     #retornamos como maximo el valor 1 correspondiende a la velocidad.
     #se descuenta puntaje si este está retrosediendo (velocidad negativa) pues se considera que estaria pasando por un lugar que ya visitó.
     criterio += velocidad
     return criterio, visitado, choque
-
-
 
 def detectar_colision(datos_colision, sim):
     for i in range(datos_colision):
