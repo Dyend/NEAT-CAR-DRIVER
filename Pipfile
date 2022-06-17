@@ -9,6 +9,7 @@ numpy = "*"
 pynput = "*"
 neat-python = "*"
 graphviz = "*"
+pandas = "*"
 
 [dev-packages]
 

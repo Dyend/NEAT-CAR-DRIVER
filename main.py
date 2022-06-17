@@ -5,6 +5,9 @@ import glfw
 import multiprocessing
 import neat
 import visualize
+import json
+import copy
+from pandas import DataFrame
 from mujoco_py import load_model_from_xml, MjSim, MjViewer, MjViewerBasic, load_model_from_path
 from neat import nn, population, statistics, parallel
 
@@ -16,9 +19,53 @@ cores = multiprocessing.cpu_count()
 episodios = 2
 steps = 12000
 render = False
-generations = 100
-training = False
-checkpoint = True
+generations = 200
+training = True
+checkpoint = False
+
+def get_map():
+    f = open('mapa.json')
+    data = json.load(f)
+    f.close()
+    return data["mapa"]
+
+mapa_inicial = get_map() 
+
+def get_new_map():
+    return copy.deepcopy(mapa_inicial)
+
+# Retorna el SQM vacio mas cercano y marca donde esta parado el vehiculo
+def get_direccion(mapa, posicion_actual):
+
+    x = float(posicion_actual[0])
+    y = float(posicion_actual[1])
+
+    if x >= 0 and y >= 0:
+        # Primer Cuadrante
+        fila = 3 - math.trunc(y)
+        columna = 4 + math.trunc(x)
+    elif x < 0 and y >= 0:
+        #Segundo cuadrante
+        fila = 3 - math.trunc(y) 
+        columna = 3 + math.trunc(x)
+    elif x < 0 and y < 0:
+        # Tercer Cuadrante
+        fila = 4 - math.trunc(y)
+        columna = 3 + math.trunc(x)
+    elif x >= 0 and y < 0:
+        # Cuarto Cuadrante
+        fila = 4 - math.trunc(y)
+        columna = 4 + math.trunc(x)
+    
+    if x < -3 or x > 3 or y > 3 or y < -3:
+        print('x : ', x)
+        print('y : ', y)
+        print('Fuera del mapa')
+
+    mapa[fila][columna] = 1
+
+
+    return 
 
 def worker_evaluate_genome(g, config):
     net = nn.FeedForwardNetwork.create(g, config)
@@ -27,9 +74,15 @@ def worker_evaluate_genome(g, config):
 def close_render(viewer):
     glfw.destroy_window(viewer.window)
 
+
+def mostrar_mapa(mapa):
+    print(DataFrame(mapa))
+
+
 def simular_genoma(net, sim, steps, render):
     choque = 0
     sim.reset()
+    mapa = get_new_map()
     t = 0
     visitado = []
     fitness = 0
@@ -39,18 +92,21 @@ def simular_genoma(net, sim, steps, render):
         sim.step()
         if render:
             viewer.render()
-        sensor_proximidad = sim.data.get_sensor("rangefinder")
-        sensor_giroscopio = sim.data.get_sensor("gyro")
-        sensor_velocimetro = sim.data.get_sensor("velocimeter")
-        sensor_acelerometro = sim.data.get_sensor("accelerometer")
+        sensor_proximidad = sim.data.sensordata[9]
+        sensor_giroscopio = sim.data.sensordata[3:6]
+        sensor_velocimetro = sim.data.sensordata[6:9]
+        sensor_acelerometro = sim.data.sensordata[0:3]
+        posicion_vehiculo = (format(sim.data.qpos[0],".1f"),format(sim.data.qpos[1],".1f"))
+        # Obtiene la direccion del SQM vacio mas cercano
+        direccion = get_direccion(mapa, posicion_vehiculo)
         #Entradas
-        input = [sensor_proximidad, sensor_giroscopio, sensor_acelerometro, sensor_velocimetro]
+        input = [sensor_proximidad, sensor_giroscopio[0], sensor_giroscopio[1], sensor_giroscopio[2], sensor_acelerometro[0], sensor_acelerometro[1], sensor_acelerometro[2], sensor_velocimetro[0], sensor_velocimetro[1], sensor_velocimetro[2]]#, direccion]
         # Salidas
         output = net.activate(input)
         for i in range(len(output)):
             sim.data.ctrl[i] = output[i]
-
-        sim.data.qpos[15] = 0.5 + math.cos(t*0.01)
+        # Movimiento del cubo
+        sim.data.qpos[15] = 0.5 + math.cos(t*0.01) * 2
         t += 1
         criterio, visitado, choque = evaluar(visitado, sim, choque)
         if (choque == 1):
@@ -58,6 +114,7 @@ def simular_genoma(net, sim, steps, render):
         fitness += criterio
     if render:
         close_render(viewer)
+        mostrar_mapa(mapa)
     print(f"Fitness {fitness}")
     return fitness
 
@@ -73,8 +130,6 @@ def simular(net, episodes, steps, render=False):
 
 def evaluar(visitado, sim, choque):
     criterio = 0
-    if (choque == 1):
-        return criterio, visitado, choque
     velocidad = sim.data.ctrl[1]
     datos_colision = sim.data.ncon
     if (detectar_colision(datos_colision, sim)):
