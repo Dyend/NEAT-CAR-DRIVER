@@ -19,7 +19,7 @@ cores = multiprocessing.cpu_count()
 episodios = 2
 steps = 12000
 render = False
-generations = 200
+generations = 100
 training = True
 checkpoint = False
 
@@ -143,7 +143,7 @@ def evaluar(visitado, sim, choque):
     visitado.append(posicion_vehiculo)
     #retornamos como maximo el valor 1 correspondiende a la velocidad.
     #se descuenta puntaje si este está retrosediendo (velocidad negativa) pues se considera que estaria pasando por un lugar que ya visitó.
-    criterio += velocidad
+    criterio += velocidad + len(visitado)
     return criterio, visitado, choque
 
 def detectar_colision(datos_colision, sim):
@@ -186,7 +186,7 @@ if checkpoint:
 stats = neat.StatisticsReporter()
 pop.add_reporter(stats)
 pop.add_reporter(neat.StdOutReporter(True))
-pop.add_reporter(neat.Checkpointer(generations/2))
+pop.add_reporter(neat.Checkpointer(20))
 # Start simulation
 
 
