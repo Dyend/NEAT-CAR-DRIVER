@@ -24,13 +24,13 @@
       <camera name="buddy_realsense_d435i" mode="fixed" pos="0 0 0.5" euler="0 4.712 4.712"/>
       <site name="buddy_imu" pos="0 0 0.5"/>
       <site name="front-range_finder_site" pos="0.1 0 .165" euler="0 1.570 4.712"/>
-      <site name="front-east-range_finder_site" pos="0.1 0.1 .165" euler="0 0.785 4.712"/>
-      <site name="front-west-range_finder_site" pos="0.1 -0.1 .165" euler="0 2.356 4.712"/>
-      <site name="east-range_finder_site" pos="0 0.1 .165" euler="0 0 4.712"/>
-      <site name="west-range_finder_site" pos="0 -0.1 .165" euler="0 3.141 4.712"/>
-      <site name="back-range_finder_site" pos="-0.125 0 .165" euler="0 4.712 4.712"/>
-      <site name="back-east-range_finder_site" pos="-0.1 0.1 .165" euler="0 5.497 4.712"/>
-      <site name="back-west-range_finder_site" pos="-0.1 -0.1 .165" euler="0 3.926 4.712"/>
+      <site name="front-east-range_finder_site" pos="0.1 -0.1 .165" euler="1.570 0.785 4.712"/>
+      <site name="front-west-range_finder_site" pos="0.1 0.1 .165" euler="1.570 2.356 4.712"/>
+      <site name="east-range_finder_site" pos="0 -0.1 .165" euler="1.570 0 4.712"/>
+      <site name="west-range_finder_site" pos="0 0.1 .165" euler="1.570 3.141 4.712"/>
+      <site name="back-range_finder_site" pos="-0.125 0 .165" euler="1.570 4.712 4.712"/>
+      <site name="back-east-range_finder_site" pos="-0.1 -0.1 .165" euler="1.570 5.497 4.712"/>
+      <site name="back-west-range_finder_site" pos="-0.1 0.1 .165" euler="1.570 3.926 4.712"/>
       <geom pos="0 0 0.094655" type="mesh" mass="3.542137" mesh="buddy_mushr_base_nano"/>
       <geom name="buddy_realsense_d435i" size="0.012525 0.045 0.0125" pos="0.0123949 0 0.162178" mass="0.072" type="box"/>
       <geom name="buddy_ydlidar" pos="-0.035325 0 0.202405" type="mesh" mass="0.180" mesh="buddy_mushr_ydlidar"/>
