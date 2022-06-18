@@ -19,7 +19,7 @@ cores = multiprocessing.cpu_count()
 episodios = 2
 steps = 12000
 render = False
-generations = 100
+generations = 101
 training = True
 checkpoint = False
 
@@ -92,7 +92,14 @@ def simular_genoma(net, sim, steps, render):
         sim.step()
         if render:
             viewer.render()
-        sensor_proximidad = sim.data.sensordata[9]
+        sensor_proximidad_frontal = sim.data.sensordata[9]
+        sensor_proximidad_frontal_derecho = sim.data.sensordata[10]
+        sensor_proximidad_frontal_izquierdo = sim.data.sensordata[11]
+        sensor_proximidad_derecho = sim.data.sensordata[12]
+        sensor_proximidad_izquierdo = sim.data.sensordata[13]
+        sensor_proximidad_trasero = sim.data.sensordata[14]
+        sensor_proximidad_trasero_derecho = sim.data.sensordata[15]
+        sensor_proximidad_trasero_izquierdo = sim.data.sensordata[16]
         sensor_giroscopio = sim.data.sensordata[3:6]
         sensor_velocimetro = sim.data.sensordata[6:9]
         sensor_acelerometro = sim.data.sensordata[0:3]
@@ -100,7 +107,30 @@ def simular_genoma(net, sim, steps, render):
         # Obtiene la direccion del SQM vacio mas cercano
         direccion = get_direccion(mapa, posicion_vehiculo)
         #Entradas
-        input = [sensor_proximidad, sensor_giroscopio[0], sensor_giroscopio[1], sensor_giroscopio[2], sensor_acelerometro[0], sensor_acelerometro[1], sensor_acelerometro[2], sensor_velocimetro[0], sensor_velocimetro[1], sensor_velocimetro[2]]#, direccion]
+        sensor_id = [sim.model.sensor_name2id('front-rangefinder'),
+        sim.model.sensor_name2id('gyro'),
+        sim.model.sensor_name2id('velocimeter'),
+        sim.model.sensor_name2id('accelerometer'),
+
+        ]
+        input = [sensor_giroscopio[0],
+        sensor_giroscopio[1],
+        sensor_giroscopio[2],
+        sensor_acelerometro[0],
+        sensor_acelerometro[1],
+        sensor_acelerometro[2],
+        sensor_velocimetro[0],
+        sensor_velocimetro[1],
+        sensor_velocimetro[2],
+        sensor_proximidad_frontal,
+        sensor_proximidad_frontal_derecho,
+        sensor_proximidad_frontal_izquierdo,
+        sensor_proximidad_derecho,
+        sensor_proximidad_izquierdo,
+        sensor_proximidad_trasero,
+        sensor_proximidad_trasero_derecho,
+        sensor_proximidad_trasero_izquierdo,
+                ]#, direccion]
         # Salidas
         output = net.activate(input)
         for i in range(len(output)):

@@ -10,6 +10,7 @@ pynput = "*"
 neat-python = "*"
 graphviz = "*"
 pandas = "*"
+matplotlib = "*"
 
 [dev-packages]
 
