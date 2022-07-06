@@ -1,5 +1,6 @@
 import math
 import os
+import gc
 import numpy as np
 import glfw
 import multiprocessing
@@ -8,7 +9,7 @@ import visualize
 import json
 import copy
 from pandas import DataFrame
-from mujoco_py import load_model_from_xml, MjSim, MjViewer, MjViewerBasic, load_model_from_path
+from mujoco_py import load_model_from_xml, MjSim, MjViewer, MjViewerBasic, load_model_from_path, MjRenderContextOffscreen
 from neat import nn, population, statistics, parallel
 
 #model = load_model_from_xml(MODEL_XML)
@@ -17,11 +18,11 @@ model = load_model_from_path(xml_path)
 
 cores = multiprocessing.cpu_count()
 episodios = 2
-steps = 12000
+steps = 40000
 render = False
-generations = 101
-training = True
-checkpoint = False
+generations = 75
+training = False
+checkpoint = True
 
 def get_map():
     f = open('mapa.json')
@@ -88,6 +89,8 @@ def simular_genoma(net, sim, steps, render):
     fitness = 0
     if render:
         viewer = MjViewer(sim)
+    else:
+        sim.forward()
     for step in range(steps):
         sim.step()
         if render:
@@ -210,7 +213,7 @@ config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
 
 pop = population.Population(config)
 if checkpoint:
-    pop = neat.Checkpointer.restore_checkpoint('neat-checkpoint-99')
+    pop = neat.Checkpointer.restore_checkpoint('neat-cp-25-cuadrados-200-pob')
     
 
 stats = neat.StatisticsReporter()
