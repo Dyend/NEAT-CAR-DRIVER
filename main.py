@@ -18,11 +18,11 @@ model = load_model_from_path(xml_path)
 
 cores = multiprocessing.cpu_count()
 episodios = 2
-steps = 40000
+steps = 30000
 render = False
-generations = 75
-training = False
-checkpoint = True
+generations = 100
+training = True
+checkpoint = False
 
 def get_map():
     f = open('mapa.json')
@@ -213,13 +213,13 @@ config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
 
 pop = population.Population(config)
 if checkpoint:
-    pop = neat.Checkpointer.restore_checkpoint('neat-cp-25-cuadrados-200-pob')
+    pop = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-149')
     
 
 stats = neat.StatisticsReporter()
 pop.add_reporter(stats)
 pop.add_reporter(neat.StdOutReporter(True))
-pop.add_reporter(neat.Checkpointer(20))
+pop.add_reporter(neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkpoint-'))
 # Start simulation
 
 
@@ -240,6 +240,9 @@ if checkpoint:
 else:
     visualize.plot_stats(stats, ylog=False, view=True)
     visualize.plot_species(stats, view=True)
+
+visualize.draw_net(config, winner, False)
+
 # Save best network
 import pickle
 with open('winner.pkl', 'wb') as output:
