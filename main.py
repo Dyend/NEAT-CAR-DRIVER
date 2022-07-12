@@ -17,12 +17,12 @@ xml_path = './models/autito.xml'
 model = load_model_from_path(xml_path)
 
 cores = multiprocessing.cpu_count()
-episodios = 2
-steps = 30000
+steps = 20000
 render = False
-generations = 100
-training = True
-checkpoint = False
+generations = 130
+training = False
+checkpoint = True
+_print = False
 
 def get_map():
     f = open('mapa.json')
@@ -70,7 +70,7 @@ def get_direccion(mapa, posicion_actual):
 
 def worker_evaluate_genome(g, config):
     net = nn.FeedForwardNetwork.create(g, config)
-    return simular(net, episodios, steps, render)
+    return simular_genoma(net, steps, render)
 
 def close_render(viewer):
     glfw.destroy_window(viewer.window)
@@ -80,11 +80,11 @@ def mostrar_mapa(mapa):
     print(DataFrame(mapa))
 
 
-def simular_genoma(net, sim, steps, render):
+def simular_genoma(net, steps, render):
     choque = 0
+    sim = MjSim(model)
     sim.reset()
     mapa = get_new_map()
-    t = 0
     visitado = []
     fitness = 0
     if render:
@@ -116,15 +116,15 @@ def simular_genoma(net, sim, steps, render):
         sim.model.sensor_name2id('accelerometer'),
 
         ]
-        input = [sensor_giroscopio[0],
-        sensor_giroscopio[1],
-        sensor_giroscopio[2],
-        sensor_acelerometro[0],
-        sensor_acelerometro[1],
-        sensor_acelerometro[2],
-        sensor_velocimetro[0],
-        sensor_velocimetro[1],
-        sensor_velocimetro[2],
+        input = [#sensor_giroscopio[0],
+        #sensor_giroscopio[1],
+        #sensor_giroscopio[2],
+        #sensor_acelerometro[0],
+        #sensor_acelerometro[1],
+        #ensor_acelerometro[2],
+        #sensor_velocimetro[0],
+        #sensor_velocimetro[1],
+        #sensor_velocimetro[2],
         sensor_proximidad_frontal,
         sensor_proximidad_frontal_derecho,
         sensor_proximidad_frontal_izquierdo,
@@ -136,28 +136,37 @@ def simular_genoma(net, sim, steps, render):
                 ]#, direccion]
         # Salidas
         output = net.activate(input)
-        for i in range(len(output)):
-            sim.data.ctrl[i] = output[i]
+        #for i in range(len(output)):
+        #   sim.data.ctrl[i] = output[i]
+
+        acelerar = output[0]
+        direccion = output[1]
+
+        if acelerar > 0.5 and sim.data.ctrl[1] < 1:
+            sim.data.ctrl[1] += 0.1
+        elif sim.data.ctrl[1] > -1:
+            sim.data.ctrl[1] -= 0.1
+
+        if direccion > 0.5 and sim.data.ctrl[0] < 1:
+            sim.data.ctrl[0] += 0.01
+        elif sim.data.ctrl[0] > -1:
+            sim.data.ctrl[0] -= 0.01
+
         # Movimiento del cubo
-        sim.data.qpos[15] = 0.5 + math.cos(t*0.01) * 2
-        t += 1
+        sim.data.qpos[15] = 0.5 +  math.cos(step*0.01) * 2
         criterio, visitado, choque = evaluar(visitado, sim, choque)
+        # Terminacion de simulacion si cumple alguno de estos  criterios
+        if step == 1000 and fitness <= 10:
+            break
         if (choque == 1):
             break
         fitness += criterio
     if render:
         close_render(viewer)
         mostrar_mapa(mapa)
-    print(f"Fitness {fitness}")
-    return fitness
+    if _print:
+        print(f"Fitness {fitness}")
 
-def simular(net, episodes, steps, render=False):
-    fitnesses = []
-    sim = MjSim(model)
-    for e in range(episodes):
-        fitnesses.append(simular_genoma(net, sim , steps, render))
-    fitness = np.array(fitnesses).mean()
-    print("Species fitness: %s" % str(fitness))
     return fitness
 
 
@@ -189,7 +198,7 @@ def detectar_colision(datos_colision, sim):
 
 def evaluate_genome(g, config):
     net = neat.nn.FeedForwardNetwork.create(g, config)
-    return simular(net, episodios, steps, render)
+    return simular_genoma(net, steps, render)
 
 def eval_fitness(genomes):
     for g in genomes:
@@ -197,11 +206,10 @@ def eval_fitness(genomes):
         g.fitness = fitness
 
 def eval_genomes(genomes, config):
-    sim = MjSim(model)
     #Simular cada genoma? 
     for genome_id, genome in genomes:
         net = neat.nn.FeedForwardNetwork.create(genome, config)
-        genome.fitness = simular_genoma(net, sim, steps, render)
+        genome.fitness = simular_genoma(net, steps, render)
 
 
 # Simulation
@@ -210,10 +218,9 @@ config_path = os.path.join(local_dir, 'config2')
 config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
                          config_path)
-
 pop = population.Population(config)
 if checkpoint:
-    pop = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-149')
+    pop = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-0')
     
 
 stats = neat.StatisticsReporter()
@@ -235,21 +242,31 @@ if training:
 
 input("Press Enter to run the best genome...")
 
+_print = True
 if checkpoint:
-    winner = pop.run(eval_genomes, 1)
+    pe = parallel.ParallelEvaluator(cores, worker_evaluate_genome)
+    winner = pop.run(pe.evaluate, 1)
 else:
     visualize.plot_stats(stats, ylog=False, view=True)
     visualize.plot_species(stats, view=True)
 
-visualize.draw_net(config, winner, False)
-
-# Save best network
-import pickle
-with open('winner.pkl', 'wb') as output:
-   pickle.dump(winner, output, 1)
+# Comentar esto si se añaden mas nodos o debe ajustarse
+node_names = {
+    0: 'direccion',
+    1: 'velocidad',
+    -1: 'Sensor Proximidad frontal',
+    -2: 'Sensor Proximidad frontal derecho',
+    -3: 'Sensor Proximidad frontal izquierdo',
+    -4: 'Sensor Proximidad derecho',
+    -5: 'Sensor Proximidad izquierdo',
+    -6: 'Sensor Proximidad trasero',
+    -7: 'Sensor Proximidad trasero derecho',
+    -8: 'Sensor Proximidad trasero izquierdo',
+    }
+visualize.draw_net(config, winner, False, node_names=node_names)
 
 print('\nBest genome:\n{!s}'.format(winner))
 
 
 winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-simular(winner_net, 1, 100000, render=True)
+simular_genoma(winner_net, 100000, render=True)
