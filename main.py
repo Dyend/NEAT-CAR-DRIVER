@@ -17,11 +17,11 @@ xml_path = './models/autito.xml'
 model = load_model_from_path(xml_path)
 
 cores = multiprocessing.cpu_count()
-steps = 20000
+steps = 30000
 render = False
-generations = 130
-training = False
-checkpoint = True
+generations = 1000
+training = True
+checkpoint = False
 _print = False
 
 def get_map():
@@ -153,7 +153,7 @@ def simular_genoma(net, steps, render):
             sim.data.ctrl[0] -= 0.01
 
         # Movimiento del cubo
-        sim.data.qpos[15] = 0.5 +  math.cos(step*0.01) * 2
+        sim.data.qpos[15] += (math.sin(step*0.01)-math.sin((step-1)*0.01))
         criterio, visitado, choque = evaluar(visitado, sim, choque)
         # Terminacion de simulacion si cumple alguno de estos  criterios
         if step == 1000 and fitness <= 10:
