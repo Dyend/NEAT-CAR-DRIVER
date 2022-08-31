@@ -1,7 +1,5 @@
 import math
 import os
-import gc
-import numpy as np
 import glfw
 import multiprocessing
 import neat
@@ -9,8 +7,9 @@ import visualize
 import json
 import copy
 from pandas import DataFrame
-from mujoco_py import load_model_from_xml, MjSim, MjViewer, MjViewerBasic, load_model_from_path, MjRenderContextOffscreen
-from neat import nn, population, statistics, parallel
+from mujoco_py import MjSim, MjViewer, load_model_from_path
+from neat import nn, parallel
+from car_driver_neat import CarPopulation, CarConfig
 
 #model = load_model_from_xml(MODEL_XML)
 xml_path = './models/autito.xml'
@@ -70,7 +69,7 @@ def get_direccion(mapa, posicion_actual):
 
 def worker_evaluate_genome(g, config):
     net = nn.FeedForwardNetwork.create(g, config)
-    return simular_genoma(net, steps, render)
+    return simular_genoma(net, steps, render, config.config_information["seed"])
 
 def close_render(viewer):
     glfw.destroy_window(viewer.window)
@@ -80,7 +79,7 @@ def mostrar_mapa(mapa):
     print(DataFrame(mapa))
 
 
-def simular_genoma(net, steps, render):
+def simular_genoma(net, steps, render, seed):
     choque = 0
     sim = MjSim(model)
     sim.reset()
@@ -215,10 +214,10 @@ def eval_genomes(genomes, config):
 # Simulation
 local_dir = os.path.dirname(__file__)
 config_path = os.path.join(local_dir, 'config2')
-config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+config = CarConfig(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
                          config_path)
-pop = population.Population(config)
+pop = CarPopulation(config)
 if checkpoint:
     pop = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-0')
     
