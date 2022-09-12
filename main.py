@@ -1,16 +1,17 @@
 import math
 import os
+import random
 import glfw
 import multiprocessing
 import neat
 import visualize
 import json
 import copy
+from util import mantener_rango
 from pandas import DataFrame
 from mujoco_py import MjSim, MjViewer, load_model_from_path
 from neat import nn, parallel
 from car_driver_neat import CarPopulation, CarConfig
-
 #model = load_model_from_xml(MODEL_XML)
 xml_path = './models/autito.xml'
 model = load_model_from_path(xml_path)
@@ -19,8 +20,8 @@ cores = multiprocessing.cpu_count()
 steps = 30000
 render = False
 generations = 1000
-training = True
-checkpoint = False
+training = False
+checkpoint = True
 _print = False
 
 def get_map():
@@ -78,6 +79,11 @@ def close_render(viewer):
 def mostrar_mapa(mapa):
     print(DataFrame(mapa))
 
+def direccion_aleatoria(velocidad):
+    valor_aleatorio = random.random()
+    if valor_aleatorio > 0.5:
+        return velocidad
+    return velocidad * - 1
 
 def simular_genoma(net, steps, render, seed):
     choque = 0
@@ -86,6 +92,9 @@ def simular_genoma(net, steps, render, seed):
     mapa = get_new_map()
     visitado = []
     fitness = 0
+    random.seed(seed)
+    previo_x_esfera = 10
+    previo_y_esfera = 0
     if render:
         viewer = MjViewer(sim)
     else:
@@ -107,7 +116,7 @@ def simular_genoma(net, steps, render, seed):
         sensor_acelerometro = sim.data.sensordata[0:3]
         posicion_vehiculo = (format(sim.data.qpos[0],".1f"),format(sim.data.qpos[1],".1f"))
         # Obtiene la direccion del SQM vacio mas cercano
-        direccion = get_direccion(mapa, posicion_vehiculo)
+        #direccion = get_direccion(mapa, posicion_vehiculo)
         #Entradas
         sensor_id = [sim.model.sensor_name2id('front-rangefinder'),
         sim.model.sensor_name2id('gyro'),
@@ -150,9 +159,19 @@ def simular_genoma(net, steps, render, seed):
             sim.data.ctrl[0] += 0.01
         elif sim.data.ctrl[0] > -1:
             sim.data.ctrl[0] -= 0.01
-
         # Movimiento del cubo
         sim.data.qpos[15] += (math.sin(step*0.01)-math.sin((step-1)*0.01))
+
+        # movimiento de la esfera
+        if not detectar_colision(sim, nombre="randomMovingObject"):
+            previo_x_esfera = sim.data.qpos[21]
+            previo_y_esfera = sim.data.qpos[22]
+            sim.data.qvel[21] += direccion_aleatoria(0.05)
+            #sim.data.qpos[22] += direccion_aleatoria(0.05)
+        else:
+            print('esfera chocando')
+            sim.data.qpos[21] = previo_x_esfera
+            sim.data.qpos[22] = previo_y_esfera
         criterio, visitado, choque = evaluar(visitado, sim, choque)
         # Terminacion de simulacion si cumple alguno de estos  criterios
         if step == 1000 and fitness <= 10:
@@ -165,15 +184,13 @@ def simular_genoma(net, steps, render, seed):
         mostrar_mapa(mapa)
     if _print:
         print(f"Fitness {fitness}")
-
     return fitness
 
 
 def evaluar(visitado, sim, choque):
     criterio = 0
     velocidad = sim.data.ctrl[1]
-    datos_colision = sim.data.ncon
-    if (detectar_colision(datos_colision, sim)):
+    if (detectar_colision(sim)):
         #Retornar valores negativos si se desea descontar puntaje por cada frame que se está haciendo colisión.
         choque = 1
         return criterio, visitado, choque
@@ -187,13 +204,16 @@ def evaluar(visitado, sim, choque):
     criterio += velocidad + len(visitado)
     return criterio, visitado, choque
 
-def detectar_colision(datos_colision, sim):
+def detectar_colision(sim, nombre=None):
+    datos_colision = sim.data.ncon
     for i in range(datos_colision):
         contact = sim.data.contact[i]
-        if(sim.model.geom_id2name(contact.geom1) == None or sim.model.geom_id2name(contact.geom2) == None):
+        if(sim.model.geom_id2name(contact.geom1) == nombre or sim.model.geom_id2name(contact.geom2) == nombre):
             if(sim.model.geom_id2name(contact.geom1) != "floor" and sim.model.geom_id2name(contact.geom2) != "floor"):
                 return True
     return False
+
+
 
 def evaluate_genome(g, config):
     net = neat.nn.FeedForwardNetwork.create(g, config)
@@ -268,4 +288,4 @@ print('\nBest genome:\n{!s}'.format(winner))
 
 
 winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-simular_genoma(winner_net, 100000, render=True)
+simular_genoma(winner_net, 100000, render=True, seed=random.random())
