@@ -166,10 +166,11 @@ def simular_genoma(net, steps, render, seed):
         if not detectar_colision(sim, nombre="randomMovingObject"):
             previo_x_esfera = sim.data.qpos[21]
             previo_y_esfera = sim.data.qpos[22]
-            sim.data.qvel[21] += direccion_aleatoria(0.05)
-            #sim.data.qpos[22] += direccion_aleatoria(0.05)
+            sim.data.qpos[21] += direccion_aleatoria(0.05)
+            sim.data.qpos[22] += direccion_aleatoria(0.05)
         else:
-            print('esfera chocando')
+            if render:
+                print('Esfera chocando')
             sim.data.qpos[21] = previo_x_esfera
             sim.data.qpos[22] = previo_y_esfera
         criterio, visitado, choque = evaluar(visitado, sim, choque)
