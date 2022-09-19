@@ -11,7 +11,8 @@ from pandas import DataFrame
 from mujoco_py import MjSim, MjViewer, load_model_from_path
 from neat import nn, parallel
 from car_driver_neat import CarPopulation, CarConfig
-from unidades import ObjetoErratico
+from unidades import Auto, UnidadErratica, UnidadPredecible
+
 #model = load_model_from_xml(MODEL_XML)
 xml_path = './models/autito.xml'
 model = load_model_from_path(xml_path)
@@ -20,8 +21,8 @@ cores = multiprocessing.cpu_count()
 steps = 30000
 render = False
 generations = 1000
-training = False
-checkpoint = True
+training = True
+checkpoint = not training
 _print = False
 
 def get_map():
@@ -79,14 +80,18 @@ def close_render(viewer):
 def mostrar_mapa(mapa):
     print(DataFrame(mapa))
 
+def ejecutar_movimientos(unidades, step):
+    for unidad in unidades:
+        unidad.movimiento(step)
+
 def simular_genoma(net, steps, render, seed):
-    choque = 0
     sim = MjSim(model)
     sim.reset()
     mapa = get_new_map()
-    visitado = []
-    fitness = 0
-    objeto_erratico = ObjetoErratico(10, 0 ,sim, seed,qpos = 21, nombre="randomMovingObject", render=render)
+    auto = Auto(0, 0, sim, "", qpos=0, nn=net,velocidad=0.1, render=render)
+    objeto_erratico = UnidadErratica(10, 0 ,sim, seed,qpos = 21, nombre="randomMovingObject", render=render)
+    objeto_predecible = UnidadPredecible(2.5, 0 , sim, nombre="movingObject", qpos=14, render=render)
+    unidades = [auto, objeto_erratico, objeto_predecible]
     if render:
         viewer = MjViewer(sim)
     else:
@@ -95,108 +100,17 @@ def simular_genoma(net, steps, render, seed):
         sim.step()
         if render:
             viewer.render()
-        sensor_proximidad_frontal = sim.data.sensordata[9]
-        sensor_proximidad_frontal_derecho = sim.data.sensordata[10]
-        sensor_proximidad_frontal_izquierdo = sim.data.sensordata[11]
-        sensor_proximidad_derecho = sim.data.sensordata[12]
-        sensor_proximidad_izquierdo = sim.data.sensordata[13]
-        sensor_proximidad_trasero = sim.data.sensordata[14]
-        sensor_proximidad_trasero_derecho = sim.data.sensordata[15]
-        sensor_proximidad_trasero_izquierdo = sim.data.sensordata[16]
-        sensor_giroscopio = sim.data.sensordata[3:6]
-        sensor_velocimetro = sim.data.sensordata[6:9]
-        sensor_acelerometro = sim.data.sensordata[0:3]
-        posicion_vehiculo = (format(sim.data.qpos[0],".1f"),format(sim.data.qpos[1],".1f"))
-        # Obtiene la direccion del SQM vacio mas cercano
-        #direccion = get_direccion(mapa, posicion_vehiculo)
-        #Entradas
-        sensor_id = [sim.model.sensor_name2id('front-rangefinder'),
-        sim.model.sensor_name2id('gyro'),
-        sim.model.sensor_name2id('velocimeter'),
-        sim.model.sensor_name2id('accelerometer'),
-
-        ]
-        input = [#sensor_giroscopio[0],
-        #sensor_giroscopio[1],
-        #sensor_giroscopio[2],
-        #sensor_acelerometro[0],
-        #sensor_acelerometro[1],
-        #ensor_acelerometro[2],
-        #sensor_velocimetro[0],
-        #sensor_velocimetro[1],
-        #sensor_velocimetro[2],
-        sensor_proximidad_frontal,
-        sensor_proximidad_frontal_derecho,
-        sensor_proximidad_frontal_izquierdo,
-        sensor_proximidad_derecho,
-        sensor_proximidad_izquierdo,
-        sensor_proximidad_trasero,
-        sensor_proximidad_trasero_derecho,
-        sensor_proximidad_trasero_izquierdo,
-                ]#, direccion]
-        # Salidas
-        output = net.activate(input)
-        #for i in range(len(output)):
-        #   sim.data.ctrl[i] = output[i]
-
-        acelerar = output[0]
-        direccion = output[1]
-
-        if acelerar > 0.5 and sim.data.ctrl[1] < 1:
-            sim.data.ctrl[1] += 0.1
-        elif sim.data.ctrl[1] > -1:
-            sim.data.ctrl[1] -= 0.1
-
-        if direccion > 0.5 and sim.data.ctrl[0] < 1:
-            sim.data.ctrl[0] += 0.01
-        elif sim.data.ctrl[0] > -1:
-            sim.data.ctrl[0] -= 0.01
-        # Movimiento del cubo
-        sim.data.qpos[15] += (math.sin(step*0.01)-math.sin((step-1)*0.01))
-        #movimiento esfera
-        objeto_erratico.movimiento(step)
-        criterio, visitado, choque = evaluar(visitado, sim, choque)
+        ejecutar_movimientos(unidades, step)
         # Terminacion de simulacion si cumple alguno de estos  criterios
-        if step == 1000 and fitness <= 10:
+        if auto.terminacion:
             break
-        if (choque == 1):
-            break
-        fitness += criterio
     if render:
         close_render(viewer)
         mostrar_mapa(mapa)
     if _print:
-        print(f"Fitness {fitness}")
+        print(f"Fitness {auto.fitness}")
         print(objeto_erratico.valor_inicial_semilla)
-    return fitness
-
-
-def evaluar(visitado, sim, choque):
-    criterio = 0
-    velocidad = sim.data.ctrl[1]
-    if (detectar_colision(sim)):
-        #Retornar valores negativos si se desea descontar puntaje por cada frame que se está haciendo colisión.
-        choque = 1
-        return criterio, visitado, choque
-    posicion_vehiculo = (format(sim.data.qpos[0],".0f"),format(sim.data.qpos[1],".0f")) #verigicar bien si corresponde al centro del vehiculo y no a una rueda
-    if (posicion_vehiculo in visitado):
-        # print("Este espacio ya fué visitado")
-        return criterio, visitado, choque
-    visitado.append(posicion_vehiculo)
-    #retornamos como maximo el valor 1 correspondiende a la velocidad.
-    #se descuenta puntaje si este está retrosediendo (velocidad negativa) pues se considera que estaria pasando por un lugar que ya visitó.
-    criterio += velocidad + len(visitado)
-    return criterio, visitado, choque
-
-def detectar_colision(sim, nombre=None):
-    datos_colision = sim.data.ncon
-    for i in range(datos_colision):
-        contact = sim.data.contact[i]
-        if(sim.model.geom_id2name(contact.geom1) == nombre or sim.model.geom_id2name(contact.geom2) == nombre):
-            if(sim.model.geom_id2name(contact.geom1) != "floor" and sim.model.geom_id2name(contact.geom2) != "floor"):
-                return True
-    return False
-
+    return auto.fitness
 
 
 def evaluate_genome(g, config):
