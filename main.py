@@ -7,11 +7,11 @@ import neat
 import visualize
 import json
 import copy
-from util import mantener_rango
 from pandas import DataFrame
 from mujoco_py import MjSim, MjViewer, load_model_from_path
 from neat import nn, parallel
 from car_driver_neat import CarPopulation, CarConfig
+from unidades import ObjetoErratico
 #model = load_model_from_xml(MODEL_XML)
 xml_path = './models/autito.xml'
 model = load_model_from_path(xml_path)
@@ -79,12 +79,6 @@ def close_render(viewer):
 def mostrar_mapa(mapa):
     print(DataFrame(mapa))
 
-def direccion_aleatoria(velocidad):
-    valor_aleatorio = random.random()
-    if valor_aleatorio > 0.5:
-        return velocidad
-    return velocidad * - 1
-
 def simular_genoma(net, steps, render, seed):
     choque = 0
     sim = MjSim(model)
@@ -92,9 +86,7 @@ def simular_genoma(net, steps, render, seed):
     mapa = get_new_map()
     visitado = []
     fitness = 0
-    random.seed(seed)
-    previo_x_esfera = 10
-    previo_y_esfera = 0
+    objeto_erratico = ObjetoErratico(10, 0 ,sim, seed,qpos = 21, nombre="randomMovingObject", render=render)
     if render:
         viewer = MjViewer(sim)
     else:
@@ -161,18 +153,8 @@ def simular_genoma(net, steps, render, seed):
             sim.data.ctrl[0] -= 0.01
         # Movimiento del cubo
         sim.data.qpos[15] += (math.sin(step*0.01)-math.sin((step-1)*0.01))
-
-        # movimiento de la esfera
-        if not detectar_colision(sim, nombre="randomMovingObject"):
-            previo_x_esfera = sim.data.qpos[21]
-            previo_y_esfera = sim.data.qpos[22]
-            sim.data.qpos[21] += direccion_aleatoria(0.05)
-            sim.data.qpos[22] += direccion_aleatoria(0.05)
-        else:
-            if render:
-                print('Esfera chocando')
-            sim.data.qpos[21] = previo_x_esfera
-            sim.data.qpos[22] = previo_y_esfera
+        #movimiento esfera
+        objeto_erratico.movimiento(step)
         criterio, visitado, choque = evaluar(visitado, sim, choque)
         # Terminacion de simulacion si cumple alguno de estos  criterios
         if step == 1000 and fitness <= 10:
@@ -185,6 +167,7 @@ def simular_genoma(net, steps, render, seed):
         mostrar_mapa(mapa)
     if _print:
         print(f"Fitness {fitness}")
+        print(objeto_erratico.valor_inicial_semilla)
     return fitness
 
 
