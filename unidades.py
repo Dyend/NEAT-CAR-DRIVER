@@ -1,6 +1,8 @@
 import random
 from util import detectar_colision
 
+# En este archivo se encuentran definido como objetos las unidades que estan en la simulacion.
+
 class ObjetoErratico:
     def __init__(self, x, y, sim, seed, nombre, qpos, velocidad=0.01,cant_movimientos=200,  render=False):
         self.x = x
