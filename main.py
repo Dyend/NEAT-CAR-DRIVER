@@ -7,6 +7,8 @@ import neat
 import visualize
 import json
 import copy
+from xml.dom import minidom
+import numpy as np
 from pandas import DataFrame
 from mujoco_py import MjSim, MjViewer, load_model_from_path
 from neat import nn, parallel
@@ -21,7 +23,8 @@ cores = multiprocessing.cpu_count()
 steps = 30000
 render = False
 generations = 1000
-training = True
+area_mapa = 0
+training = False
 checkpoint = not training
 _print = False
 
@@ -31,10 +34,119 @@ def get_map():
     f.close()
     return data["mapa"]
 
-mapa_inicial = get_map() 
+def espacios_recorridos(mapa):
+    recorridos = 0
+    for x in mapa:
+        for y in x:
+            if(y == 1):
+                recorridos += 1
+    return recorridos
+
+def mostrar_mapa(mapa):
+    recorridos = espacios_recorridos(mapa)
+    print(area_mapa)
+    print(DataFrame(mapa))
+    print("Espacios Recorridos: ", espacios_recorridos(mapa))
+    print("Porcentaje Recorrido: ", recorridos*100/area_mapa, "%")
 
 def get_new_map():
-    return copy.deepcopy(mapa_inicial)
+    new_mapa = np.zeros((10,20),dtype=int)
+    # return copy.deepcopy(mapa_inicial)
+    file = minidom.parse('models/autito.xml')
+    muros = file.getElementsByTagName('geom')
+    for muro in muros:
+        if("side" in muro.attributes['name'].value or "hallway" in muro.attributes['name'].value):
+            #print(muro.attributes['name'].value)
+            size = muro.attributes['size'].value
+            sizeX = math.trunc(float(size.split(" ")[0]))
+            sizeY = math.trunc(float(size.split(" ")[1]))
+            pos = muro.attributes['pos'].value
+            x = float(pos.split(" ")[0])
+            y = float(pos.split(" ")[1])
+            if x >= 0 and y >= 0:
+                # Primer Cuadrante
+                fila = 3 - math.trunc(y)
+                columna = 4 + math.trunc(x)
+                if(sizeY>0):
+                    for largo in range(sizeY):
+                        new_mapa[fila+(largo+1),columna]=-8
+                        new_mapa[fila-largo,columna]=-8
+            elif x < 0 and y >= 0:
+                #Segundo cuadrante
+                fila = 3 - math.trunc(y) 
+                columna = 3 + math.trunc(x)
+                if(sizeY>0):
+                    for largo in range(sizeY):
+                        new_mapa[fila+(largo+1),columna]=-8
+                        new_mapa[fila-largo,columna]=-8
+            elif x < 0 and y < 0:
+                # Tercer Cuadrante
+                fila = 4 - math.trunc(y)
+                columna = 3 + math.trunc(x)
+                if(sizeY>0):
+                    for largo in range(sizeY):
+                        new_mapa[fila+largo,columna]=-8
+                        new_mapa[fila-(largo+1),columna]=-8
+            elif x >= 0 and y < 0:
+                # Cuarto Cuadrante
+                fila = 4 - math.trunc(y)
+                columna = 4 + math.trunc(x)
+                if(sizeY>0):
+                    for largo in range(sizeY):
+                        new_mapa[fila+largo,columna]=-8
+                        new_mapa[fila-(largo+1),columna]=-8
+            if(sizeX>0):
+                for largo in range(sizeX):
+                    new_mapa[fila,columna+largo]=-8
+                    new_mapa[fila,columna-(largo+1)]=-8
+        #print(muro.attributes['size'].value)
+    #mostrar_mapa(new_mapa)
+    return new_mapa
+
+def get_area_mapa(new_mapa):
+    area = 0
+    fila, columna = new_mapa.shape
+    posX = 0
+    posY = 0
+    for x in new_mapa:
+        for y in x:
+            if (y == 0):
+                north = False
+                east = False
+                west = False
+                south = False
+                posObjetoX = posX
+                posObjetoY = posY
+                while(posObjetoX!=0 and new_mapa[posObjetoX][posObjetoY] != -8):
+                    posObjetoX -= 1
+                    if(new_mapa[posObjetoX][posObjetoY] == -8):
+                        north = True
+                posObjetoX = posX
+                posObjetoY = posY
+                while(posObjetoX!=fila-1 and new_mapa[posObjetoX][posObjetoY] != -8):
+                    posObjetoX += 1
+                    if(new_mapa[posObjetoX][posObjetoY] == -8):
+                        south = True
+                posObjetoX = posX
+                posObjetoY = posY
+                while(posObjetoY!=0 and new_mapa[posObjetoX][posObjetoY] != -8):
+                    posObjetoY -= 1
+                    if(new_mapa[posObjetoX][posObjetoY] == -8):
+                        west = True
+                posObjetoX = posX
+                posObjetoY = posY
+                while(posObjetoY!=columna-1 and new_mapa[posObjetoX][posObjetoY] != -8):
+                    posObjetoY += 1
+                    if(new_mapa[posObjetoX][posObjetoY] == -8):
+                        east = True
+                if(north == True and east == True and west == True and south == True):
+                    area += 1
+            posY += 1
+        posX += 1
+        posY = 0
+    return area
+
+
 
 # Retorna el SQM vacio mas cercano y marca donde esta parado el vehiculo
 def get_direccion(mapa, posicion_actual):
@@ -59,7 +171,7 @@ def get_direccion(mapa, posicion_actual):
         fila = 4 - math.trunc(y)
         columna = 4 + math.trunc(x)
     
-    if x < -3 or x > 3 or y > 3 or y < -3:
+    if x < -3 or y > 3 or y < -3: #or x > 3
         print('x : ', x)
         print('y : ', y)
         print('Fuera del mapa')
@@ -77,8 +189,6 @@ def close_render(viewer):
     glfw.destroy_window(viewer.window)
 
 
-def mostrar_mapa(mapa):
-    print(DataFrame(mapa))
 
 def ejecutar_movimientos(unidades, step):
     for unidad in unidades:
@@ -101,9 +211,11 @@ def simular_genoma(net, steps, render, seed):
         if render:
             viewer.render()
         ejecutar_movimientos(unidades, step)
+        get_direccion(mapa, auto.posicion_vehiculo)
         # Terminacion de simulacion si cumple alguno de estos  criterios
         if auto.terminacion:
             break
+    auto.ajustar_fitness(espacios_recorridos(mapa)/area_mapa)
     if render:
         close_render(viewer)
         mostrar_mapa(mapa)
@@ -128,6 +240,8 @@ def eval_genomes(genomes, config):
         net = neat.nn.FeedForwardNetwork.create(genome, config)
         genome.fitness = simular_genoma(net, steps, render)
 
+mapa_inicial = get_new_map() 
+area_mapa = get_area_mapa(mapa_inicial)
 
 # Simulation
 local_dir = os.path.dirname(__file__)

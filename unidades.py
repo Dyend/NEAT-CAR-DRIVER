@@ -69,6 +69,7 @@ class Auto(Unidad):
         self.fitness = 0
         self.terminacion = False
         self.visitados = []
+        self.posicion_vehiculo = []
 
     def get_inputs(self):
         sensor_proximidad_frontal = self.sim.data.sensordata[9]
@@ -119,7 +120,7 @@ class Auto(Unidad):
         elif self.sim.data.ctrl[0] > -1:
             self.sim.data.ctrl[0] -= 0.01
 
-        posicion_vehiculo = (format(self.sim.data.qpos[0],".1f"),format(self.sim.data.qpos[1],".1f"))
+        self.posicion_vehiculo = [format(self.sim.data.qpos[self.qpos_x],".1f"),format(self.sim.data.qpos[self.qpos_y],".1f")]
         # Obtiene la direccion del SQM vacio mas cercano
         #direccion = get_direccion(mapa, posicion_vehiculo)
         self.evaluar()
@@ -140,3 +141,6 @@ class Auto(Unidad):
             #retornamos como maximo el valor 1 correspondiende a la velocidad.
             #se descuenta puntaje si este está retrosediendo (velocidad negativa) pues se considera que estaria pasando por un lugar que ya visitó.
             self.fitness += velocidad + len(self.visitados)
+
+    def ajustar_fitness(self, porcentaje_area_recorrida):
+        self.fitness = self.fitness*porcentaje_area_recorrida
