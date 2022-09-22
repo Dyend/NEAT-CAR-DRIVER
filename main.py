@@ -6,7 +6,7 @@ import multiprocessing
 import neat
 import visualize
 import json
-import copy
+import argparse
 from xml.dom import minidom
 import numpy as np
 from pandas import DataFrame
@@ -20,14 +20,26 @@ xml_path = './models/autito.xml'
 model = load_model_from_path(xml_path)
 
 cores = multiprocessing.cpu_count()
-steps = 30000
 render = False
-generations = 1000
 area_mapa = 0
-training = False
-checkpoint = not training
-_print = False
 
+
+parser = argparse.ArgumentParser(description='CarDriver NEAT')
+parser.add_argument('--max-steps', dest='steps', type=int, default=30000,
+                    help='The max number of steps to take per genome (timeout)')
+parser.add_argument('--episodes', type=int, default=3,
+                    help="The number of times to run a single genome. This takes the fitness score from the worst run")
+parser.add_argument('--generations', type=int, default=200,
+                    help="The number of generations to evolve the network")
+parser.add_argument('--checkpoint', type=str,
+                    help="Uses a checkpoint to start the simulation")
+
+args = parser.parse_args()
+steps = args.steps
+episodes = args.episodes
+generations = args.generations
+
+args = parser.parse_args()
 def get_map():
     f = open('mapa.json')
     data = json.load(f)
@@ -44,7 +56,7 @@ def espacios_recorridos(mapa):
 
 def mostrar_mapa(mapa):
     recorridos = espacios_recorridos(mapa)
-    print(area_mapa)
+    print(f'el area del mapa es {area_mapa}')
     print(DataFrame(mapa))
     print("Espacios Recorridos: ", espacios_recorridos(mapa))
     print("Porcentaje Recorrido: ", recorridos*100/area_mapa, "%")
@@ -183,7 +195,14 @@ def get_direccion(mapa, posicion_actual):
 
 def worker_evaluate_genome(g, config):
     net = nn.FeedForwardNetwork.create(g, config)
-    return simular_genoma(net, steps, render, config.config_information["seed"])
+    fitness = 0
+    seed = config.config_information["seed"]
+    for e in range(episodes):
+        fitness += simular_genoma(net, steps, render, seed)
+        seed = random.random()
+    fitness = fitness / 3
+    print(f'El genoma {g.key} tuvo un Fitness de {fitness}')
+    return fitness
 
 def close_render(viewer):
     glfw.destroy_window(viewer.window)
@@ -199,7 +218,7 @@ def simular_genoma(net, steps, render, seed):
     sim.reset()
     mapa = get_new_map()
     auto = Auto(0, 0, sim, "", qpos=0, nn=net,velocidad=0.1, render=render)
-    objeto_erratico = UnidadErratica(10, 0 ,sim, seed,qpos = 21, nombre="randomMovingObject", render=render)
+    objeto_erratico = UnidadErratica(10, 0 ,sim, seed,qpos = 21, nombre="randomMovingObject", render=render, velocidad=0.005)
     objeto_predecible = UnidadPredecible(2.5, 0 , sim, nombre="movingObject", qpos=14, render=render)
     unidades = [auto, objeto_erratico, objeto_predecible]
     if render:
@@ -219,9 +238,6 @@ def simular_genoma(net, steps, render, seed):
     if render:
         close_render(viewer)
         mostrar_mapa(mapa)
-    if _print:
-        print(f"Fitness {auto.fitness}")
-        print(objeto_erratico.valor_inicial_semilla)
     return auto.fitness
 
 
@@ -250,8 +266,9 @@ config = CarConfig(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
                          config_path)
 pop = CarPopulation(config)
-if checkpoint:
-    pop = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-0')
+
+if args.checkpoint:
+    pop = neat.Checkpointer.restore_checkpoint(f'./checkpoints/neat-checkpoint-{args.checkpoint}')
     
 
 stats = neat.StatisticsReporter()
@@ -261,7 +278,8 @@ pop.add_reporter(neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkp
 # Start simulation
 
 
-if training:
+if not args.checkpoint:
+    input('Presione enter para iniciar entrenamiento...')
     pe = parallel.ParallelEvaluator(cores, worker_evaluate_genome)
     winner = pop.run(pe.evaluate, generations)
 
@@ -271,10 +289,9 @@ if training:
 #visualization.plot_stats(stats, ylog=True, view=True, filename="feedforward-fitness.svg")
 #visualization.plot_species(stats, view=True, filename="feedforward-speciation.svg")
 
-input("Press Enter to run the best genome...")
+input("Presione enter para ejecutar el mejor genoma...")
 
-_print = True
-if checkpoint:
+if args.checkpoint:
     pe = parallel.ParallelEvaluator(cores, worker_evaluate_genome)
     winner = pop.run(pe.evaluate, 1)
 else:
@@ -300,4 +317,5 @@ print('\nBest genome:\n{!s}'.format(winner))
 
 
 winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-simular_genoma(winner_net, 100000, render=True, seed=random.random())
+fitness = simular_genoma(winner_net, 100000, render=True, seed=random.random())
+print(f'Fitness = {fitness}')

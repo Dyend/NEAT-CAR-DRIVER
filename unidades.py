@@ -70,16 +70,17 @@ class Auto(Unidad):
         self.terminacion = False
         self.visitados = []
         self.posicion_vehiculo = []
+        self.cap_sensor = 2
 
     def get_inputs(self):
-        sensor_proximidad_frontal = self.sim.data.sensordata[9]
-        sensor_proximidad_frontal_derecho = self.sim.data.sensordata[10]
-        sensor_proximidad_frontal_izquierdo = self.sim.data.sensordata[11]
-        sensor_proximidad_derecho = self.sim.data.sensordata[12]
-        sensor_proximidad_izquierdo = self.sim.data.sensordata[13]
-        sensor_proximidad_trasero = self.sim.data.sensordata[14]
-        sensor_proximidad_trasero_derecho = self.sim.data.sensordata[15]
-        sensor_proximidad_trasero_izquierdo = self.sim.data.sensordata[16]
+        sensor_proximidad_frontal = self.ajustar_sensor(self.sim.data.sensordata[9])
+        sensor_proximidad_frontal_derecho = self.ajustar_sensor(self.sim.data.sensordata[10])
+        sensor_proximidad_frontal_izquierdo = self.ajustar_sensor(self.sim.data.sensordata[11])
+        sensor_proximidad_derecho = self.ajustar_sensor(self.sim.data.sensordata[12])
+        sensor_proximidad_izquierdo = self.ajustar_sensor(self.sim.data.sensordata[13])
+        sensor_proximidad_trasero = self.ajustar_sensor(self.sim.data.sensordata[14])
+        sensor_proximidad_trasero_derecho = self.ajustar_sensor(self.sim.data.sensordata[15])
+        sensor_proximidad_trasero_izquierdo = self.ajustar_sensor(self.sim.data.sensordata[16])
         sensor_giroscopio = self.sim.data.sensordata[3:6]
         sensor_velocimetro = self.sim.data.sensordata[6:9]
         sensor_acelerometro = self.sim.data.sensordata[0:3]
@@ -144,3 +145,30 @@ class Auto(Unidad):
 
     def ajustar_fitness(self, porcentaje_area_recorrida):
         self.fitness = self.fitness*porcentaje_area_recorrida
+
+    def ajustar_sensor(self, sensor):
+        return sensor
+
+    def sensor_frontal(self):
+        sensor_proximidad_frontal = self.ajustar_sensor(self.sim.data.sensordata[9])
+        sensor_proximidad_frontal_derecho = self.ajustar_sensor(self.sim.data.sensordata[10])
+        sensor_proximidad_frontal_izquierdo = self.ajustar_sensor(self.sim.data.sensordata[11])
+        return ((sensor_proximidad_frontal + sensor_proximidad_frontal_derecho + sensor_proximidad_frontal_izquierdo) / 3 )
+
+    def sensor_derecho(self):
+        sensor_proximidad_derecho = self.ajustar_sensor(self.sim.data.sensordata[12])
+        sensor_proximidad_frontal_derecho = self.ajustar_sensor(self.sim.data.sensordata[10])
+        sensor_proximidad_trasero_derecho = self.ajustar_sensor(self.sim.data.sensordata[15])
+        return ((sensor_proximidad_derecho + sensor_proximidad_frontal_derecho + sensor_proximidad_trasero_derecho) / 3)
+
+    def sensor_izquierdo(self):
+        sensor_proximidad_frontal_izquierdo = self.ajustar_sensor(self.sim.data.sensordata[11])
+        sensor_proximidad_izquierdo = self.ajustar_sensor(self.sim.data.sensordata[13])
+        sensor_proximidad_trasero_izquierdo = self.ajustar_sensor(self.sim.data.sensordata[16])
+        return ((sensor_proximidad_frontal_izquierdo + sensor_proximidad_trasero_izquierdo + sensor_proximidad_izquierdo) / 3 )
+
+    def sensor_trasero(self):
+        sensor_proximidad_trasero = self.ajustar_sensor(self.sim.data.sensordata[14])
+        sensor_proximidad_trasero_derecho = self.ajustar_sensor(self.sim.data.sensordata[15])
+        sensor_proximidad_trasero_izquierdo = self.ajustar_sensor(self.sim.data.sensordata[16])
+        return ((sensor_proximidad_trasero_izquierdo + sensor_proximidad_trasero + sensor_proximidad_trasero_derecho) / 3)

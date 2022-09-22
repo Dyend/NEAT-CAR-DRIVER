@@ -38,13 +38,13 @@
 		<!-- <geom conaffinity="0" pos="-3 0 0" name="A2sideW" rgba="0.9 0.9 0.9 1" size="0.11 3 1" type="box"/> -->
 
 		<!-- Movable Object -->
-    <body name="movingObject" pos="2.5 0 0.3">
+    <body name="movingObject" pos="10 0 0.3">
     <joint name="object0:joint" type="free" damping="0.01"></joint>
 		<geom conaffinity="1" contype="1"  name="movingObject" rgba="0.9 0.2 0.1 1" size="0.3 0.3 0.3" mass="2" type="box"></geom>
     </body>
-    
+   
     <!-- Random Movable Object -->
-    <body name="randomMovingObject" pos="10 0 0.3">
+    <body name="randomMovingObject" pos="2.5 0 0.3">
     <joint name="object1:joint1" type="free" damping="0.01"></joint>
 		<geom conaffinity="1" contype="1"  name="randomMovingObject" rgba="0.9 0.9 0.1 1" size="0.3 0.3 0.3" mass="2" type="ellipsoid"></geom>
     </body>
