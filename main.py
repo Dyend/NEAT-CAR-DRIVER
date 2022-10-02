@@ -199,8 +199,10 @@ def worker_evaluate_genome(g, config):
     net = nn.FeedForwardNetwork.create(g, config)
     fitness = 0
     seed = config.config_information["seed"]
-    for e in range(episodes):
+    for e in range(1, episodes + 1):
+        #print(f'seed {seed} episidio {e} genoma {g.key}')
         fitness += simular_genoma(net, steps, render, seed)
+        random.seed(config.config_information["seed"] * (e + 1))
         seed = random.random()
     fitness = fitness / 3
     print(f'El genoma {g.key} tuvo un Fitness de {fitness}')
