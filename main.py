@@ -33,6 +33,8 @@ parser.add_argument('--generations', type=int, default=200,
                     help="The number of generations to evolve the network")
 parser.add_argument('--checkpoint', type=str,
                     help="Uses a checkpoint to start the simulation")
+parser.add_argument('--training', type=bool, default=False,
+                    help="continue training from that generation")                   
 
 args = parser.parse_args()
 steps = args.steps
@@ -278,10 +280,12 @@ pop.add_reporter(neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkp
 # Start simulation
 
 
-if not args.checkpoint:
-    input('Presione enter para iniciar entrenamiento...')
+if args.training == True:
+    input("Presione enter para iniciar entrenamiento...")
     pe = parallel.ParallelEvaluator(cores, worker_evaluate_genome)
     winner = pop.run(pe.evaluate, generations)
+elif not args.checkpoint:
+    exit()
 
 
 #print('Number of evaluations: {0}'.format(winner))
