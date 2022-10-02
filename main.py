@@ -285,6 +285,7 @@ if args.training == True:
     pe = parallel.ParallelEvaluator(cores, worker_evaluate_genome)
     winner = pop.run(pe.evaluate, generations)
 elif not args.checkpoint:
+    print('No se han ingresado parametros para iniciar correctamente')
     exit()
 
 
