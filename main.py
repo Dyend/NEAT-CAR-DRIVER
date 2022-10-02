@@ -299,7 +299,7 @@ input("Presione enter para ejecutar el mejor genoma...")
 if args.checkpoint:
     pe = parallel.ParallelEvaluator(cores, worker_evaluate_genome)
     winner = pop.run(pe.evaluate, 1)
-else:
+elif args.training == True:
     visualize.plot_stats(stats, ylog=False, view=True)
     visualize.plot_species(stats, view=True)
 
