@@ -296,10 +296,10 @@ elif not args.checkpoint:
 
 input("Presione enter para ejecutar el mejor genoma...")
 
-if args.checkpoint:
+if args.training == False:
     pe = parallel.ParallelEvaluator(cores, worker_evaluate_genome)
     winner = pop.run(pe.evaluate, 1)
-elif args.training == True:
+else:
     visualize.plot_stats(stats, ylog=False, view=True)
     visualize.plot_species(stats, view=True)
 
