@@ -302,7 +302,7 @@ if args.training == False:
     pe = parallel.ParallelEvaluator(cores, worker_evaluate_genome)
     winner = pop.run(pe.evaluate, 1)
 else:
-    visualize.plot_stats(stats, ylog=False, view=True)
+    visualize.plot_stats(stats, ylog=False, view=True, generations=generations)
     visualize.plot_species(stats, view=True)
 
 # Comentar esto si se añaden mas nodos o debe ajustarse

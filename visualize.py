@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_stats(statistics, ylog=False, view=False, filename='avg_fitness.svg'):
+def plot_stats(statistics, ylog=False, view=False, filename='avg_fitness.svg', generations=1):
     """ Plots the population's average and best fitness. """
     if plt is None:
         warnings.warn("This display is not available due to a missing optional dependency (matplotlib)")
@@ -19,6 +19,7 @@ def plot_stats(statistics, ylog=False, view=False, filename='avg_fitness.svg'):
     avg_fitness = np.array(statistics.get_fitness_mean())
     stdev_fitness = np.array(statistics.get_fitness_stdev())
 
+    plt.figure(figsize=(generations, 10))
     plt.plot(generation, avg_fitness, 'b-', label="average")
     plt.plot(generation, avg_fitness - stdev_fitness, 'g-.', label="-1 sd")
     plt.plot(generation, avg_fitness + stdev_fitness, 'g-.', label="+1 sd")
@@ -27,6 +28,7 @@ def plot_stats(statistics, ylog=False, view=False, filename='avg_fitness.svg'):
     plt.title("Population's average and best fitness")
     plt.xlabel("Generations")
     plt.ylabel("Fitness")
+    plt.xticks(np.arange(generations))
     plt.grid()
     plt.legend(loc="best")
     if ylog:
@@ -104,7 +106,6 @@ def plot_species(statistics, view=False, filename='speciation.svg'):
     plt.title("Speciation")
     plt.ylabel("Size per Species")
     plt.xlabel("Generations")
-
     plt.savefig(filename)
 
     if view:
