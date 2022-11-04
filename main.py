@@ -1,3 +1,4 @@
+from enum import auto
 import math
 import os
 import random
@@ -56,11 +57,12 @@ def espacios_recorridos(mapa):
                 recorridos += 1
     return recorridos
 
+
 def mostrar_mapa(mapa):
     recorridos = espacios_recorridos(mapa)
     print(f'el area del mapa es {area_mapa}')
     print(DataFrame(mapa))
-    print("Espacios Recorridos: ", espacios_recorridos(mapa))
+    print("Espacios Recorridos: ", recorridos)
     print("Porcentaje Recorrido: ", recorridos*100/area_mapa, "%")
 
 def get_new_map():
@@ -190,10 +192,11 @@ def get_direccion(mapa, posicion_actual):
         print('y : ', y)
         print('Fuera del mapa')
 
-    mapa[fila][columna] = 1
-
-
-    return 
+    if(mapa[fila][columna] == 0):
+        mapa[fila][columna] = 1
+        return 1
+        
+    return 0
 
 def worker_evaluate_genome(g, config):
     net = nn.FeedForwardNetwork.create(g, config)
@@ -213,10 +216,14 @@ def close_render(viewer):
 
 
 
-def ejecutar_movimientos(unidades, step):
+def ejecutar_movimientos(areas_recorridas, unidades, step):
+    porcentaje_espacios_recorridos = (areas_recorridas/area_mapa)
     for unidad in unidades:
-        unidad.movimiento(step)
-
+        if(isinstance(unidad, Auto)):
+            unidad.movimiento(step, porcentaje_espacios_recorridos)
+        else:
+            unidad.movimiento(step)
+            
 def simular_genoma(net, steps, render, seed):
     sim = MjSim(model)
     sim.reset()
@@ -225,6 +232,7 @@ def simular_genoma(net, steps, render, seed):
     objeto_erratico = UnidadErratica(10, 0 ,sim, seed,qpos = 21, nombre="randomMovingObject", render=render, velocidad=0.005)
     objeto_predecible = UnidadPredecible(2.5, 0 , sim, nombre="movingObject", qpos=14, render=render)
     unidades = [auto, objeto_erratico, objeto_predecible]
+    areas_recorridas = 0
     if render:
         viewer = MjViewer(sim)
     else:
@@ -233,12 +241,12 @@ def simular_genoma(net, steps, render, seed):
         sim.step()
         if render:
             viewer.render()
-        ejecutar_movimientos(unidades, step)
-        get_direccion(mapa, auto.posicion_vehiculo)
+        ejecutar_movimientos(areas_recorridas, unidades, step)
+        areas_recorridas += get_direccion(mapa, auto.posicion_vehiculo)
         # Terminacion de simulacion si cumple alguno de estos  criterios
         if auto.terminacion:
             break
-    auto.ajustar_fitness(espacios_recorridos(mapa)/area_mapa)
+    auto.ajustar_fitness(areas_recorridas/area_mapa)
     if render:
         close_render(viewer)
         mostrar_mapa(mapa)

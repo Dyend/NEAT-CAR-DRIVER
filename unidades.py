@@ -1,5 +1,6 @@
 import random
 import math
+import re
 from util import detectar_colision
 
 # En este archivo se encuentran definido como objetos las unidades que estan en la simulacion.
@@ -71,6 +72,7 @@ class Auto(Unidad):
         self.visitados = []
         self.posicion_vehiculo = []
         self.cap_sensor = 2
+        self.last_posicion_list = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
 
     def get_inputs(self):
         sensor_proximidad_frontal = self.ajustar_sensor(self.sim.data.sensordata[9])
@@ -104,17 +106,23 @@ class Auto(Unidad):
         ]
         return _inputs
 
-    def movimiento(self, step):
+    def movimiento(self, step, porcentaje_espacios_recorridos):
         # obtener inputs de la nn
         inputs = self.get_inputs()
         output = self.neural_network.activate(inputs)
-        acelerar = output[0]
-        direccion = output[1]
+        if(self.sim.data.sensordata[9] <= 0.5 and output[0] >= 0.5):
+    
+            self.sim.data.ctrl[1] = 0
+        elif(self.sim.data.sensordata[14] <= 0.5 and output[0] < 0.5):
+            self.sim.data.ctrl[1] = 0
+        else:
+            acelerar = output[0]
+            if acelerar > 0.5 and self.sim.data.ctrl[1] < 1:
+                self.sim.data.ctrl[1] += self.velocidad
+            elif self.sim.data.ctrl[1] > -1:
+                self.sim.data.ctrl[1] -= self.velocidad
 
-        if acelerar > 0.5 and self.sim.data.ctrl[1] < 1:
-            self.sim.data.ctrl[1] += self.velocidad
-        elif self.sim.data.ctrl[1] > -1:
-            self.sim.data.ctrl[1] -= self.velocidad
+        direccion = output[1]
 
         if direccion > 0.5 and self.sim.data.ctrl[0] < 1:
             self.sim.data.ctrl[0] += 0.01
@@ -124,24 +132,34 @@ class Auto(Unidad):
         self.posicion_vehiculo = [format(self.sim.data.qpos[self.qpos_x],".1f"),format(self.sim.data.qpos[self.qpos_y],".1f")]
         # Obtiene la direccion del SQM vacio mas cercano
         #direccion = get_direccion(mapa, posicion_vehiculo)
-        self.evaluar()
+        self.evaluar(porcentaje_espacios_recorridos)
         # Terminacion de simulacion si cumple alguno de estos  criterios
         if step == 1000 and self.fitness <= 10:
             self.terminacion = True
 
-    def evaluar(self):
-        
+    def evaluar(self, porcentaje_espacios_recorridos):
         velocidad = self.sim.data.ctrl[1]
         if (detectar_colision(self.sim)):
             self.terminacion = True
             return
         posicion_vehiculo = (format(self.sim.data.qpos[self.qpos_x],".0f"),format(self.sim.data.qpos[self.qpos_y],".0f")) #verificar bien si corresponde al centro del vehiculo y no a una rueda
+        self.last_posicion_list.pop(0)
+        self.last_posicion_list.append((format(self.sim.data.qpos[self.qpos_x],".6f"),format(self.sim.data.qpos[self.qpos_y],".6f")))
         if not (posicion_vehiculo in self.visitados):
             # este espacio no ha sido visitado
             self.visitados.append(posicion_vehiculo)
             #retornamos como maximo el valor 1 correspondiende a la velocidad.
             #se descuenta puntaje si este está retrosediendo (velocidad negativa) pues se considera que estaria pasando por un lugar que ya visitó.
-            self.fitness += velocidad + len(self.visitados)
+            self.fitness += abs(velocidad) + len(self.visitados)
+            return
+        #if(porcentaje_espacios_recorridos>=1):
+            #print(porcentaje_espacios_recorridos)
+        if(len(set(self.last_posicion_list)) == 1):
+            #print(self.last_posicion_list)
+            recompensa = abs((abs(velocidad)-1.1)*(1-porcentaje_espacios_recorridos))*-1
+            self.fitness += recompensa
+            #if(recompensa>0):
+                #print(porcentaje_espacios_recorridos)
 
     def ajustar_fitness(self, porcentaje_area_recorrida):
         self.fitness = self.fitness*porcentaje_area_recorrida
