@@ -131,8 +131,9 @@ def mostrar_mapa(mapa, area_mapa):
     print("Espacios Recorridos: ", espacios_recorridos(mapa))
     print("Porcentaje Recorrido: ", recorridos*100/area_mapa, "%")
 
-def get_unidades(map_path, qpos, sim, render, seed):
+def get_unidades_dict(map_path):
     unidades = []
+    qpos = 14
     dom = minidom.parse(map_path)
     elements = dom.getElementsByTagName('body')
     for element in elements:
@@ -140,10 +141,11 @@ def get_unidades(map_path, qpos, sim, render, seed):
         x = pos[0]
         y = pos[1]
         if "randomMovingObject" in element.attributes['name'].value:
-            unidades.append(UnidadErratica(x, y ,sim, seed,qpos = qpos, nombre="randomMovingObject", render=render, velocidad=0.005))
+            tipo= "Erratico"
         else:
-            unidades.append(UnidadPredecible(x, y , sim, nombre="movingObject", qpos=qpos, render=render))
-
+            tipo = "Predecible"
+        unidad = {"tipo": tipo, "x": x, "y": y, "qpos": qpos}
+        unidades.append(unidad)
         qpos += 7
 
     return unidades

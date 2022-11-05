@@ -172,3 +172,14 @@ class Auto(Unidad):
         sensor_proximidad_trasero_derecho = self.ajustar_sensor(self.sim.data.sensordata[15])
         sensor_proximidad_trasero_izquierdo = self.ajustar_sensor(self.sim.data.sensordata[16])
         return ((sensor_proximidad_trasero_izquierdo + sensor_proximidad_trasero + sensor_proximidad_trasero_derecho) / 3)
+
+
+
+def create_unidades(sim, unidades_dict, seed, render):
+    unidades = []
+    for unidad in unidades_dict:
+        if unidad["tipo"] == "Erratico":
+            unidades.append(UnidadErratica(unidad["x"], unidad["y"] ,sim, seed,qpos = unidad["qpos"], nombre="randomMovingObject", render=render, velocidad=0.005))
+        else:
+            unidades.append(UnidadPredecible(unidad["x"], unidad["y"] , sim, nombre="movingObject", qpos=unidad["qpos"], render=render))
+    return unidades

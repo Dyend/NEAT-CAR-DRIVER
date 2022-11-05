@@ -1,7 +1,7 @@
 from neat.population import Population, CompleteExtinctionException
 from neat.config import Config
 from neat.six_util import iteritems, itervalues
-from map import load_levels, get_area_mapa, get_new_map
+from map import load_levels, get_area_mapa, get_new_map, get_unidades_dict
 from random import random
 
 class CarPopulation(Population):
@@ -38,6 +38,7 @@ class CarPopulation(Population):
             # otherwise we start from the easier
             map_number = 1
         map_path =  f'./models/levels/{map_number}.xml'
+        unidades = get_unidades_dict(map_path)
         mapa = get_new_map(map_path)
         map_area = get_area_mapa(mapa)
         change_every = int(n / total_levels)
@@ -47,6 +48,7 @@ class CarPopulation(Population):
             if k != 0 and k % change_every == 0:
                 map_number += 1
                 map_path =  f'./models/levels/{map_number}.xml'
+                unidades = get_unidades_dict(map_path)
                 mapa = get_new_map(map_path)
                 map_area = get_area_mapa(mapa)
                 print(f'cambio de mapa ===> {map_number}')
@@ -57,7 +59,7 @@ class CarPopulation(Population):
             
             
             random_value = random()
-            self.config.config_information = {"seed": random_value, "map_path": map_path, "map_area": map_area}
+            self.config.config_information = {"seed": random_value, "map_path": map_path, "map_area": map_area, "unidades_dict": unidades}
             # Evaluate all genomes using the user-provided function.
             fitness_function(list(iteritems(self.population)), self.config)
 

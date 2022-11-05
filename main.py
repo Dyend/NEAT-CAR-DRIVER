@@ -10,7 +10,8 @@ from mujoco_py import MjSim, MjViewer, load_model_from_path
 from neat import nn, parallel
 from car_driver_neat import CarPopulation, CarConfig
 from unidades import Auto
-from map import get_new_map, mostrar_mapa, get_unidades, espacios_recorridos, get_area_mapa, load_levels
+from map import get_new_map, mostrar_mapa, espacios_recorridos, get_area_mapa, load_levels, get_unidades_dict
+from unidades import create_unidades
 
 cores = multiprocessing.cpu_count()
 render = False
@@ -82,8 +83,9 @@ def worker_evaluate_genome(g, config):
     seed = config.config_information["seed"]
     map_area = config.config_information["map_area"]
     map_path = config.config_information["map_path"]
+    unidades_dict = config.config_information["unidades_dict"]
     for e in range(1, episodes + 1):
-        fitness = simular_genoma(net, steps, render, seed, map_path, map_area)
+        fitness = simular_genoma(net, steps, render, seed, map_path, map_area, unidades_dict)
         total_fitness += fitness
         if args.show_seed and args.show_seed == g.key:
             print(f'seed {seed} episidio {e} genoma {g.key} fitness {fitness} en mapa {map_path}')
@@ -106,13 +108,13 @@ def ejecutar_movimientos(unidades, step):
     for unidad in unidades:
         unidad.movimiento(step)
 
-def simular_genoma(net, steps, render, seed, map_path, area_mapa):
+def simular_genoma(net, steps, render, seed, map_path, area_mapa, unidades_dict):
     model = load_model_from_path(map_path)
     sim = MjSim(model)
     sim.reset()
     mapa = get_new_map(map_path)
     auto = Auto(0, 0, sim, "", qpos=0, nn=net,velocidad=0.1, render=render)
-    unidades = [auto] + get_unidades(map_path, qpos=14, sim=sim, render=render, seed=seed)
+    unidades = [auto] + create_unidades(unidades_dict= unidades_dict, sim=sim, render=render, seed=seed)
     if render:
         viewer = MjViewer(sim)
     else:
@@ -216,7 +218,8 @@ else:
     seed = random.random()
 
 map_path = f'./models/levels/{args.map}.xml'
+unidades = get_unidades_dict(map_path)
 mapa = get_new_map(map_path)
 area_mapa = get_area_mapa(mapa)
-fitness = simular_genoma(winner_net, 100000, render=True, seed=seed, map_path=map_path, area_mapa=area_mapa)
+fitness = simular_genoma(winner_net, 100000, render=True, seed=seed, map_path=map_path, area_mapa=area_mapa, unidades_dict=unidades)
 print(f'Fitness = {fitness}')
