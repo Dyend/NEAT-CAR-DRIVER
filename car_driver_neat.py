@@ -1,6 +1,7 @@
 from neat.population import Population, CompleteExtinctionException
 from neat.config import Config
 from neat.six_util import iteritems, itervalues
+from map import load_levels, get_area_mapa, get_new_map
 from random import random
 
 class CarPopulation(Population):
@@ -28,13 +29,35 @@ class CarPopulation(Population):
         if self.config.no_fitness_termination and (n is None):
             raise RuntimeError("Cannot have no generational limit with no fitness termination")
 
+
+        total_levels = load_levels()
+        # if generations equal  1 we choose the hardest lvl
+        if n == 1:
+            map_number = total_levels
+        else:
+            # otherwise we start from the easier
+            map_number = 1
+        map_path =  f'./models/levels/{map_number}.xml'
+        mapa = get_new_map(map_path)
+        map_area = get_area_mapa(mapa)
+        change_every = int(n / total_levels)
         k = 0
         while n is None or k < n:
+
+            if k != 0 and k % change_every == 0:
+                map_number += 1
+                map_path =  f'./models/levels/{map_number}.xml'
+                mapa = get_new_map(map_path)
+                map_area = get_area_mapa(mapa)
+                print(f'cambio de mapa ===> {map_number}')
+                
             k += 1
 
             self.reporters.start_generation(self.generation)
+            
+            
             random_value = random()
-            self.config.config_information = {"seed": random_value}
+            self.config.config_information = {"seed": random_value, "map_path": map_path, "map_area": map_area}
             # Evaluate all genomes using the user-provided function.
             fitness_function(list(iteritems(self.population)), self.config)
 
