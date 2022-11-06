@@ -91,7 +91,7 @@ def worker_evaluate_genome(g, config):
             print(f'seed {seed} episidio {e} genoma {g.key} fitness {fitness} en mapa {map_path}')
         random.seed(config.config_information["seed"] * (e + 1))
         seed = random.random()
-    total_fitness = total_fitness / 3
+    total_fitness = total_fitness / episodes
     if args.show_seed:
         if args.show_seed == g.key:
             print(f'El genoma {g.key} tuvo un Fitness de {total_fitness}')

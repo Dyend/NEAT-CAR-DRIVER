@@ -141,7 +141,7 @@ class Auto(Unidad):
             self.visitados.append(posicion_vehiculo)
             #retornamos como maximo el valor 1 correspondiende a la velocidad.
             #se descuenta puntaje si este está retrosediendo (velocidad negativa) pues se considera que estaria pasando por un lugar que ya visitó.
-            self.fitness += velocidad + len(self.visitados)
+            self.fitness += abs(velocidad) + len(self.visitados)
 
     def ajustar_fitness(self, porcentaje_area_recorrida):
         self.fitness = self.fitness*porcentaje_area_recorrida
