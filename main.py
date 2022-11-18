@@ -67,7 +67,7 @@ def get_direccion(mapa, posicion_actual):
         fila = 4 - math.trunc(y)
         columna = 4 + math.trunc(x)
     
-    if x < -3 or y > 3 or y < -3: #or x > 3
+    if x < -3 or y > 3 or y < -9: #or x > 3
         print('x : ', x)
         print('y : ', y)
         print('Fuera del mapa')

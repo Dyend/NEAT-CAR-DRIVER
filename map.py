@@ -71,7 +71,7 @@ def get_area_mapa(new_mapa):
     return area
 
 def get_new_map(map_path):
-    new_mapa = np.zeros((10,20),dtype=int)
+    new_mapa = np.zeros((15,20),dtype=int)
     # return copy.deepcopy(mapa_inicial)
     file = minidom.parse(map_path)
     muros = file.getElementsByTagName('geom')

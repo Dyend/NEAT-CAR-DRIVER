@@ -16,9 +16,9 @@
     <map znear="0.001" />
   </visual>
   <worldbody>
-        <!-- First Area -->
+  <!-- First Area -->
     <geom contype="1" friction=".5 0.005 0.0001" name="floor" pos="0 0 0" size="0 0 .25" type="plane" material="matplane" condim="3"/> -->
-		<geom conaffinity="0" pos="0 -3.11 0" name="A1sideS" rgba="0.9 0.9 0.9 1" size="3 0.11 1" type="box"/>
+		<!-- <geom conaffinity="0" pos="0 -3.5 0" name="A1sideS" rgba="0.9 0.9 0.9 1" size="3 0.5 1" type="box"/> -->
     <geom conaffinity="0" pos="3.11 2 0" name="A1sideE1" rgba="0.9 0.9 0.9 1" size="0.11 1 1" type="box"/>
     <geom conaffinity="0" pos="3.11 -2 0" name="A1sideE2" rgba="0.9 0.9 0.9 1" size="0.11 1 1" type="box"/>
 		<!-- <geom conaffinity="0" pos=" 3 0 0" name="A1sideE" rgba="0.9 0.4 0.6 1" size=".11 3 1" type="box"/> -->
@@ -26,27 +26,55 @@
 		<geom conaffinity="0" pos="-3.11 0 0" name="A1sideW" rgba="0.9 0.9 0.9 1" size="0.11 3 1" type="box"/>
 
     <!-- Hallway -->
-    <geom conaffinity="0" pos="5 1.11 0" name="hallwayN" rgba="0.9 0.9 0.9 1" size="2 0.11 1" type="box"/>
-    <geom conaffinity="0" pos="5 -1.11 0" name="hallwayS" rgba="0.9 0.9 0.9 1" size="2 0.11 1" type="box"/>
+    <geom conaffinity="0" pos="3.5 1.11 0" name="hallwayN" rgba="0.9 0.9 0.9 1" size="0.5 0.11 1" type="box"/>
+    <geom conaffinity="0" pos="3.5 -1.11 0" name="hallwayS" rgba="0.9 0.9 0.9 1" size="0.5 0.11 1" type="box"/>
+    <!-- <geom conaffinity="0" pos="3.5 -3.5 0" name="hallwayS2" rgba="0.9 0.9 0.9 1" size="0.5 0.5 1" type="box"/> -->
 
     <!-- Second Area -->
-    <geom conaffinity="0" pos="10 -3.11 0" name="A2sideS" rgba="0.9 0.9 0.9 1" size="3 0.11 1" type="box"/>
-    <geom conaffinity="0" pos="6.89 2 0" name="A2sideW1" rgba="0.9 0.9 0.9 1" size="0.11 1 1" type="box"/>
-    <geom conaffinity="0" pos="6.89 -2 0" name="A2sideW2" rgba="0.9 0.9 0.9 1" size="0.11 1 1" type="box"/>
-		<geom conaffinity="0" pos="13.11 0 0" name="A2sideE" rgba="0.9 0.9 0.9 1" size="0.11 3 1" type="box"/>
-		<geom conaffinity="0" pos="10 3.11 0" name="A2sideN" rgba="0.9 0.9 0.9 1" size="3 0.11 1" type="box"/>
+    <!-- <geom conaffinity="0" pos="7 -3.5 0" name="A2sideS" rgba="0.9 0.9 0.9 1" size="3 0.5 1" type="box"/> -->
+    <geom conaffinity="0" pos="3.89 2 0" name="A2sideW1" rgba="0.9 0.9 0.9 1" size="0.11 1 1" type="box"/>
+    <geom conaffinity="0" pos="3.89 -2 0" name="A2sideW2" rgba="0.9 0.9 0.9 1" size="0.11 1 1" type="box"/>
+		<!-- <geom conaffinity="0" pos="10.11 0 0" name="A2sideE" rgba="0.9 0.9 0.9 1" size="0.11 3 1" type="box"/> -->
+    <geom conaffinity="0" pos="10.11 2 0" name="A2sideE1" rgba="0.9 0.9 0.9 1" size="0.11 1 1" type="box"/>
+    <!-- <geom conaffinity="0" pos="10.11 -2 0" name="A2sideE2" rgba="0.9 0.9 0.9 1" size="0.11 1 1" type="box"/> -->
+		<geom conaffinity="0" pos="7 3.11 0" name="A2sideN" rgba="0.9 0.9 0.9 1" size="3 0.11 1" type="box"/>
 		<!-- <geom conaffinity="0" pos="-3 0 0" name="A2sideW" rgba="0.9 0.9 0.9 1" size="0.11 3 1" type="box"/> -->
 
+    <!-- Banana Hallway -->
+    <geom conaffinity="0" pos="12.11 1.11 0" name="BananahallwayN" rgba="0.9 0.9 0.9 1" size="2 0.11 1" type="box"/>
+    <geom conaffinity="0" pos="10.5 -4 0" name="BananahallwayW1" rgba="0.9 0.9 0.9 1" size="0.5 3 1" type="box"/>
+    <geom conaffinity="0" pos="11.5 -4 0" name="BananahallwayW2" rgba="0.9 0.9 0.9 1" size="0.5 3 1" type="box"/>
+    <geom conaffinity="0" pos="14.11 -4 0" name="BananahallwayE" rgba="0.9 0.9 0.9 1" size="0.11 5 1" type="box"/>
+    <geom conaffinity="0" pos="12.11 -9.11 0" name="BananahallwayS" rgba="0.9 0.9 0.9 1" size="2 0.11 1" type="box"/>
+
+    <!-- Third Area -->
+    <geom conaffinity="0" pos="4 -3.5 0" name="A3sideN" rgba="0.9 0.9 0.9 1" size="7 0.5 1" type="box"/>
+    <geom conaffinity="0" pos="4 -9.11 0" name="A3sideS" rgba="0.9 0.9 0.9 1" size="7 0.11 1" type="box"/>
+    <geom conaffinity="0" pos="-3.11 -6 0" name="A3sideW" rgba="0.9 0.9 0.9 1" size="0.11 3 1" type="box"/>
+
+
 		<!-- Movable Object -->
-    <body name="movingObject" pos="10 0 0.3">
+    <body name="movingObject" pos="9 0 0.3">
     <joint name="object0:joint" type="free" damping="0.01"></joint>
 		<geom conaffinity="1" contype="1"  name="movingObject" rgba="0.9 0.2 0.1 1" size="0.3 0.3 0.3" mass="2" type="box"></geom>
     </body>
    
     <!-- Random Movable Object -->
-    <body name="randomMovingObject" pos="2.5 0 0.3">
+    <body name="randomMovingObject" pos="7 0 0.3">
     <joint name="object1:joint1" type="free" damping="0.01"></joint>
 		<geom conaffinity="1" contype="1"  name="randomMovingObject" rgba="0.9 0.9 0.1 1" size="0.3 0.3 0.3" mass="2" type="ellipsoid"></geom>
+    </body>
+
+    <!-- Random Movable Object -->
+    <body name="randomMovingObject2" pos="7 -6 0.3">
+    <joint name="object2:joint2" type="free" damping="0.01"></joint>
+		<geom conaffinity="1" contype="1"  name="randomMovingObject2" rgba="0.9 0.9 0.1 1" size="0.3 0.3 0.3" mass="2" type="ellipsoid"></geom>
+    </body>
+
+    <!-- Random Movable Object -->
+    <body name="randomMovingObject3" pos="0 -6 0.3">
+    <joint name="object3:joint3" type="free" damping="0.01"></joint>
+		<geom conaffinity="1" contype="1"  name="randomMovingObject3" rgba="0.9 0.9 0.1 1" size="0.3 0.3 0.3" mass="2" type="ellipsoid"></geom>
     </body>
 
   </worldbody>
