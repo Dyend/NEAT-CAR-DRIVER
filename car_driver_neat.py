@@ -44,7 +44,7 @@ class CarPopulation(Population):
         map_area = get_area_mapa(mapa)
         change_every = int(n / total_levels)
         k = 0
-        best = None
+        
 
         start_time = time.time()
         generations_time = []
@@ -71,6 +71,7 @@ class CarPopulation(Population):
             fitness_function(list(iteritems(self.population)), self.config)
 
             # Gather and report statistics.
+            best = None
             for g in itervalues(self.population):
                 if best is None or g.fitness > best.fitness:
                     best = g
