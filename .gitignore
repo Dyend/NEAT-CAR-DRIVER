@@ -130,3 +130,5 @@ dmypy.json
 
 checkpoint
 checkpoints
+graficos
+*.svg
