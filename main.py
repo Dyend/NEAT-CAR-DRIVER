@@ -4,7 +4,6 @@ import random
 import glfw
 import multiprocessing
 import neat
-import visualize
 import argparse
 from mujoco_py import MjSim, MjViewer, load_model_from_path
 from neat import nn, parallel
@@ -19,7 +18,7 @@ area_mapa = 0
 
 
 parser = argparse.ArgumentParser(description='CarDriver NEAT')
-parser.add_argument('--max-steps', dest='steps', type=int, default=30000,
+parser.add_argument('--max-steps', dest='steps', type=int, default=50000,
                     help='The max number of steps to take per genome (timeout)')
 parser.add_argument('--episodes', type=int, default=3,
                     help="The number of times to run a single genome. This takes the fitness score from the worst run")
@@ -189,24 +188,7 @@ input("Presione enter para ejecutar el mejor genoma...")
 if args.training == False:
     pe = parallel.ParallelEvaluator(cores, worker_evaluate_genome)
     winner = pop.run(pe.evaluate, 1)
-else:
-    visualize.plot_stats(stats, ylog=False, view=True, generations=generations)
-    visualize.plot_species(stats, view=True)
 
-# Comentar esto si se añaden mas nodos o debe ajustarse
-node_names = {
-    0: 'direccion',
-    1: 'velocidad',
-    -1: 'Sensor Proximidad frontal',
-    -2: 'Sensor Proximidad frontal derecho',
-    -3: 'Sensor Proximidad frontal izquierdo',
-    -4: 'Sensor Proximidad derecho',
-    -5: 'Sensor Proximidad izquierdo',
-    -6: 'Sensor Proximidad trasero',
-    -7: 'Sensor Proximidad trasero derecho',
-    -8: 'Sensor Proximidad trasero izquierdo',
-    }
-visualize.draw_net(config, winner, False, node_names=node_names)
 
 print('\nBest genome:\n{!s}'.format(winner))
 

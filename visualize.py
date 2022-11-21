@@ -6,20 +6,39 @@ import warnings
 import graphviz
 import matplotlib.pyplot as plt
 import numpy as np
+from graph import feed_forward_layers, DrawNN
 
 
-def plot_stats(statistics, ylog=False, view=False, filename='avg_fitness.svg', generations=1):
+def plot_time(begin, end, filename, generation_time):
     """ Plots the population's average and best fitness. """
     if plt is None:
-        warnings.warn("This display is not available due to a missing optional dependency (matplotlib)")
+        warnings.warn(
+            "This display is not available due to a missing optional dependency (matplotlib)")
+        return
+    generation = range(begin, end)
+    plt.plot(generation, generation_time, 'b-', label="seconds")
+    plt.title("Population's average and best fitness")
+    plt.xlabel("Generations")
+    plt.ylabel("Generation time")
+    plt.grid()
+    plt.legend(loc="best")
+    plt.savefig(filename)
+
+
+    plt.close()
+def plot_large_stats(statistics, ylog=False, view=False, filename='avg_fitness.svg', generations=1, begin=0, end=4):
+    """ Plots the population's average and best fitness. """
+    if plt is None:
+        warnings.warn(
+            "This display is not available due to a missing optional dependency (matplotlib)")
         return
 
-    generation = range(len(statistics.most_fit_genomes))
-    best_fitness = [c.fitness for c in statistics.most_fit_genomes]
-    avg_fitness = np.array(statistics.get_fitness_mean())
-    stdev_fitness = np.array(statistics.get_fitness_stdev())
+    generation = range(begin, end)
+    best_fitness = [c.fitness for c in statistics.most_fit_genomes][begin:end]
+    avg_fitness = np.array(statistics.get_fitness_mean())[begin:end]
+    stdev_fitness = np.array(statistics.get_fitness_stdev())[begin:end]
 
-    plt.figure(figsize=(generations, 10))
+    plt.figure(figsize=(end-begin, 10))
     plt.plot(generation, avg_fitness, 'b-', label="average")
     plt.plot(generation, avg_fitness - stdev_fitness, 'g-.', label="-1 sd")
     plt.plot(generation, avg_fitness + stdev_fitness, 'g-.', label="+1 sd")
@@ -28,7 +47,39 @@ def plot_stats(statistics, ylog=False, view=False, filename='avg_fitness.svg', g
     plt.title("Population's average and best fitness")
     plt.xlabel("Generations")
     plt.ylabel("Fitness")
-    plt.xticks(np.arange(generations))
+    plt.xticks(np.arange(begin, end))
+    plt.grid()
+    plt.legend(loc="best")
+    if ylog:
+        plt.gca().set_yscale('symlog')
+
+    plt.savefig(filename)
+    if view:
+        plt.show()
+
+    plt.close()
+
+
+def plot_stats(statistics, ylog=False, view=False, filename='avg_fitness.svg', generations=1, begin=0, end=4):
+    """ Plots the population's average and best fitness. """
+    if plt is None:
+        warnings.warn(
+            "This display is not available due to a missing optional dependency (matplotlib)")
+        return
+
+    generation = range(begin, end)
+    best_fitness = [c.fitness for c in statistics.most_fit_genomes][begin:end]
+    avg_fitness = np.array(statistics.get_fitness_mean())[begin:end]
+    stdev_fitness = np.array(statistics.get_fitness_stdev())[begin:end]
+
+    plt.plot(generation, avg_fitness, 'b-', label="average")
+    plt.plot(generation, avg_fitness - stdev_fitness, 'g-.', label="-1 sd")
+    plt.plot(generation, avg_fitness + stdev_fitness, 'g-.', label="+1 sd")
+    plt.plot(generation, best_fitness, 'r-', label="best")
+
+    plt.title("Population's average and best fitness")
+    plt.xlabel("Generations")
+    plt.ylabel("Fitness")
     plt.grid()
     plt.legend(loc="best")
     if ylog:
@@ -93,7 +144,8 @@ def plot_spikes(spikes, view=False, filename=None, title=None):
 def plot_species(statistics, view=False, filename='speciation.svg'):
     """ Visualizes speciation throughout evolution. """
     if plt is None:
-        warnings.warn("This display is not available due to a missing optional dependency (matplotlib)")
+        warnings.warn(
+            "This display is not available due to a missing optional dependency (matplotlib)")
         return
 
     species_sizes = statistics.get_species_sizes()
@@ -114,12 +166,28 @@ def plot_species(statistics, view=False, filename='speciation.svg'):
     plt.close()
 
 
+def draw_net2(config, genome, view=False, filename=None, node_names=None, show_disabled=True, prune_unused=False,
+              node_colors=None, fmt='svg'):
+    layers = feed_forward_layers(inputs=config.genome_config.input_keys, outputs=config.genome_config.output_keys, connections=[
+                                 i.key for i in genome.connections.values()])
+    neurons_per_layer = [len(layer) for layer in layers]
+    neurons_per_layer.insert(0, len(config.genome_config.input_keys))
+    neurons_per_layer.append(len(config.genome_config.output_keys))
+    nn = DrawNN(neurons_per_layer, filename + "topology.png")
+    layers = [list(l) for l in layers]
+    layers.insert(0, config.genome_config.input_keys)
+    layers.append(config.genome_config.output_keys)
+    print(layers)
+    nn.draw(layers, genome)
+
+
 def draw_net(config, genome, view=False, filename=None, node_names=None, show_disabled=True, prune_unused=False,
              node_colors=None, fmt='svg'):
     """ Receives a genome and draws a neural network with arbitrary topology. """
     # Attributes for network nodes.
     if graphviz is None:
-        warnings.warn("This display is not available due to a missing optional dependency (graphviz)")
+        warnings.warn(
+            "This display is not available due to a missing optional dependency (graphviz)")
         return
 
     if node_names is None:
@@ -186,7 +254,7 @@ def draw_net(config, genome, view=False, filename=None, node_names=None, show_di
 
     for cg in genome.connections.values():
         if cg.enabled or show_disabled:
-            #if cg.input not in used_nodes or cg.output not in used_nodes:
+            # if cg.input not in used_nodes or cg.output not in used_nodes:
             #    continue
             input, output = cg.key
             a = node_names.get(input, str(input))
@@ -194,8 +262,35 @@ def draw_net(config, genome, view=False, filename=None, node_names=None, show_di
             style = 'solid' if cg.enabled else 'dotted'
             color = 'green' if cg.weight > 0 else 'red'
             width = str(0.1 + abs(cg.weight / 5.0))
-            dot.edge(a, b, _attributes={'style': style, 'color': color, 'penwidth': width})
+            dot.edge(a, b, _attributes={
+                     'style': style, 'color': color, 'penwidth': width})
 
-    dot.render(filename, view=view)
-
+    dot.render(filename + "digraph", view=view)
+    draw_net2(config, genome, False, node_names=node_names, filename=filename)
     return dot
+
+
+def graph_per_stage(config, map_number, genome, stats_reporter, generations, total_maps, generation_time):
+    node_names = {
+        0: 'direccion',
+        1: 'velocidad',
+        -1: 'Sensor Proximidad frontal',
+        -2: 'Sensor Proximidad frontal derecho',
+        -3: 'Sensor Proximidad frontal izquierdo',
+        -4: 'Sensor Proximidad derecho',
+        -5: 'Sensor Proximidad izquierdo',
+        -6: 'Sensor Proximidad trasero',
+        -7: 'Sensor Proximidad trasero derecho',
+        -8: 'Sensor Proximidad trasero izquierdo',
+    }
+    draw_net(config, genome, False, node_names=node_names,
+             filename=f'./graficos/{map_number}/')
+
+    begin = int((map_number - 1) * (generations / total_maps))
+    end = int((map_number) * (generations / total_maps))
+
+    plot_stats(stats_reporter, ylog=False, view=True,
+               filename=f'./graficos/{map_number}/avg_fitness.svg', begin=begin, end=end)
+    plot_large_stats(stats_reporter, ylog=False, view=True,
+                     filename=f'./graficos/{map_number}/large_avg_fitness.svg', begin=begin, end=end)
+    plot_time(begin, end, filename=f'./graficos/{map_number}/time.svg', generation_time=generation_time)

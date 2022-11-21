@@ -3,7 +3,8 @@ from neat.config import Config
 from neat.six_util import iteritems, itervalues
 from map import load_levels, get_area_mapa, get_new_map, get_unidades_dict
 from random import random
-
+from visualize import graph_per_stage
+import time
 class CarPopulation(Population):
 
     def run(self, fitness_function, n=None):
@@ -43,7 +44,12 @@ class CarPopulation(Population):
         map_area = get_area_mapa(mapa)
         change_every = int(n / total_levels)
         k = 0
+        best = None
+
+        start_time = time.time()
+        generations_time = []
         while n is None or k < n:
+            gen_time = time.time()
 
             if k != 0 and k % change_every == 0:
                 map_number += 1
@@ -52,6 +58,7 @@ class CarPopulation(Population):
                 mapa = get_new_map(map_path)
                 map_area = get_area_mapa(mapa)
                 print(f'cambio de mapa ===> {map_number}')
+                
                 
             k += 1
 
@@ -64,11 +71,16 @@ class CarPopulation(Population):
             fitness_function(list(iteritems(self.population)), self.config)
 
             # Gather and report statistics.
-            best = None
             for g in itervalues(self.population):
                 if best is None or g.fitness > best.fitness:
                     best = g
+
+            generations_time.append(time.time() - gen_time)
             self.reporters.post_evaluate(self.config, self.population, self.species, best)
+
+            if k % change_every == 0:
+                graph_per_stage(self.config, map_number, best, self.reporters.reporters[0], n, total_levels, generations_time)
+                generations_time = []
 
             # Track the best genome ever seen.
             if self.best_genome is None or best.fitness > self.best_genome.fitness:
@@ -107,7 +119,7 @@ class CarPopulation(Population):
 
         if self.config.no_fitness_termination:
             self.reporters.found_solution(self.config, self.generation, self.best_genome)
-
+        print(f"Total time --- {time.time() - start_time} seconds ---")
         return self.best_genome
 
 class CarConfig(Config):

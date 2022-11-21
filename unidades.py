@@ -179,7 +179,7 @@ def create_unidades(sim, unidades_dict, seed, render):
     unidades = []
     for unidad in unidades_dict:
         if unidad["tipo"] == "Erratico":
-            unidades.append(UnidadErratica(unidad["x"], unidad["y"] ,sim, seed,qpos = unidad["qpos"], nombre="randomMovingObject", render=render, velocidad=0.005))
+            unidades.append(UnidadErratica(unidad["x"], unidad["y"] ,sim, seed,qpos = unidad["qpos"], nombre="randomMovingObject", render=render, velocidad=0.0025))
         else:
             unidades.append(UnidadPredecible(unidad["x"], unidad["y"] , sim, nombre="movingObject", qpos=unidad["qpos"], render=render))
     return unidades
