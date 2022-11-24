@@ -5,6 +5,7 @@ import glfw
 import multiprocessing
 import neat
 import argparse
+import time
 from mujoco_py import MjSim, MjViewer, load_model_from_path
 from neat import nn, parallel
 from car_driver_neat import CarPopulation, CarConfig
@@ -34,6 +35,12 @@ parser.add_argument('--show_seed', type=int, default=False,
                     help="print seed for specific genome")
 parser.add_argument('--map', type=int, default=load_levels(),
                     help="map to be used when loading checkpoint")
+
+parser.add_argument('--exploit', type=int,
+                    help="loads a checkpoint and exploits it till exploit minutes or reaches exploit fitness")
+
+parser.add_argument('--exploit_fitness', type=int,
+                    help="exploit fitness")
 
 args = parser.parse_args()
 steps = args.steps
@@ -106,6 +113,24 @@ def close_render(viewer):
 def ejecutar_movimientos(unidades, step):
     for unidad in unidades:
         unidad.movimiento(step)
+
+def exploit(net, steps, render, seed, map_path, area_mapa, unidades_dict):
+    fitness = 0
+    best = 0
+    start_time = time.time()
+    best_seed = None
+    while fitness <= args.exploit_fitness:
+        seed = random.random()
+        fitness = simular_genoma(net, steps, False, seed, map_path, area_mapa, unidades_dict)
+        print(f'Se obtuvo un fitness de {fitness} con la semilla {seed}')
+        if fitness >= best:
+            best = fitness
+            best_seed = seed
+        if (time.time() - start_time > (60 * args.exploit)):
+            break
+    print(f'El mejor luego de {args.exploit} minutos fue {best} con la semilla {best_seed}')
+    fitness = simular_genoma(net, steps, True, best_seed, map_path, area_mapa, unidades_dict)
+    print(f'Fitness = {fitness}')
 
 def simular_genoma(net, steps, render, seed, map_path, area_mapa, unidades_dict):
     model = load_model_from_path(map_path)
@@ -203,5 +228,12 @@ map_path = f'./models/levels/{args.map}.xml'
 unidades = get_unidades_dict(map_path)
 mapa = get_new_map(map_path)
 area_mapa = get_area_mapa(mapa)
-fitness = simular_genoma(winner_net, 100000, render=True, seed=seed, map_path=map_path, area_mapa=area_mapa, unidades_dict=unidades)
-print(f'Fitness = {fitness}')
+
+if args.exploit and args.exploit_fitness:
+    exploit(winner_net, 100000, render=True, seed=seed, map_path=map_path, area_mapa=area_mapa, unidades_dict=unidades)
+else:   
+    fitness = simular_genoma(winner_net, 100000, render=True, seed=seed, map_path=map_path, area_mapa=area_mapa, unidades_dict=unidades)
+    print(f'Fitness = {fitness}')
+
+
+
