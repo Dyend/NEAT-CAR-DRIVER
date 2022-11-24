@@ -137,11 +137,20 @@ class Auto(Unidad):
             return
         posicion_vehiculo = (format(self.sim.data.qpos[self.qpos_x],".0f"),format(self.sim.data.qpos[self.qpos_y],".0f")) #verificar bien si corresponde al centro del vehiculo y no a una rueda
         if not (posicion_vehiculo in self.visitados):
+            area = 1
             # este espacio no ha sido visitado
             self.visitados.append(posicion_vehiculo)
             #retornamos como maximo el valor 1 correspondiende a la velocidad.
             #se descuenta puntaje si este está retrosediendo (velocidad negativa) pues se considera que estaria pasando por un lugar que ya visitó.
-            self.fitness += abs(velocidad) + len(self.visitados)
+            if(int(posicion_vehiculo[0])>3 and int(posicion_vehiculo[1])>-3):
+                area = 2
+                if(int(posicion_vehiculo[0]) > 10):
+                    area = 3
+            if(int(posicion_vehiculo[1])<-3):
+                area = 4
+                if(int(posicion_vehiculo[0]) < 10):
+                    area = 5
+            self.fitness += abs(velocidad) + len(self.visitados)*pow(area,area)
 
     def ajustar_fitness(self, porcentaje_area_recorrida):
         self.fitness = self.fitness*porcentaje_area_recorrida
